@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chercheur de prix - Android</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, sans-serif; background: #f5f5f5; min-height: 100vh; padding: 2rem 1rem; }
+  .app { max-width: 420px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; color: #111; }
+  .sub { font-size: 14px; color: #888; margin-bottom: 1.5rem; }
+  .camera-btns { display: flex; gap: 10px; margin-bottom: 1rem; }
+  .cam-btn { flex: 1; padding: 14px 10px; border-radius: 14px; border: 1px solid #eee; background: white; font-size: 13px; font-weight: 600; color: #111; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .cam-icon { font-size: 24px; }
+  .divider { text-align: center; font-size: 13px; color: #aaa; margin: 1rem 0; }
+  input { width: 100%; padding: 14px; font-size: 16px; border: 1px solid #ddd; border-radius: 12px; background: white; margin-bottom: 8px; }
+  .hint { font-size: 13px; color: #aaa; margin-bottom: 1.5rem; }
+  .btn { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-radius: 14px; border: 1px solid #eee; background: white; margin-bottom: 10px; cursor: pointer; width: 100%; }
+  .btn-left { display: flex; align-items: center; gap: 12px; }
+  .icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: white; }
+  .v { background: #09B1BA; }
+  .l { background: #FF6E14; }
+  .btn-label { font-size: 15px; font-weight: 600; color: #111; text-align: left; }
+  .btn-sub { font-size: 12px; color: #999; margin-top: 2px; }
+  .arrow { font-size: 18px; color: #ccc; }
+  .both { width: 100%; padding: 16px; border-radius: 14px; border: 1px solid #ddd; background: #f0f0f0; font-size: 15px; font-weight: 600; color: #333; margin-bottom: 1.5rem; cursor: pointer; }
+  .tip { background: #fff8e1; border-radius: 12px; padding: 14px; font-size: 13px; color: #666; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>Chercheur de prix</h1>
+  <p class="sub">Version Android</p>
+
+  <div class="camera-btns">
+    <button class="cam-btn" onclick="openLens()">
+      <span class="cam-icon">🔍</span>
+      <span>Google Lens</span>
+      <span style="font-size:11px;color:#aaa;font-weight:400;">Ouvrir l'appli</span>
+    </button>
+    <button class="cam-btn" onclick="openGoogleImages()">
+      <span class="cam-icon">📷</span>
+      <span>Google Images</span>
+      <span style="font-size:11px;color:#aaa;font-weight:400;">Recherche par photo</span>
+    </button>
+  </div>
+
+  <div class="divider">— puis colle le nom trouvé ici —</div>
+
+  <input type="text" id="q" placeholder="Ex: lampe Jielde vintage..." />
+  <p class="hint">Colle le nom détecté par Google Lens ici</p>
+
+  <button class="btn" onclick="go('vinted')">
+    <div class="btn-left">
+      <div class="icon v">V</div>
+      <div>
+        <div class="btn-label">Vinted</div>
+        <div class="btn-sub">Prix entre particuliers</div>
+      </div>
+    </div>
+    <span class="arrow">→</span>
+  </button>
+
+  <button class="btn" onclick="go('lbc')">
+    <div class="btn-left">
+      <div class="icon l">L</div>
+      <div>
+        <div class="btn-label">Leboncoin</div>
+        <div class="btn-sub">Annonces locales</div>
+      </div>
+    </div>
+    <span class="arrow">→</span>
+  </button>
+
+  <button class="both" onclick="go('both')">Ouvrir les deux en même temps</button>
+
+  <div class="tip"><strong>Astuce :</strong> Appuie sur Google Lens, pointe l'objet, copie le nom, colle-le ici et recherche !</div>
+</div>
+
+<script>
+function openLens() {
+  window.location.href = 'intent://lens/#Intent;scheme=googleapp;package=com.google.android.googlequicksearchbox;action=com.google.android.googlequicksearchbox.LENS_ACTIVITY;end';
+  setTimeout(function() {
+    window.open('https://lens.google.com', '_blank');
+  }, 1500);
+}
+function openGoogleImages() {
+  window.open('https://images.google.com', '_blank');
+}
+function go(site) {
+  var q = document.getElementById('q').value.trim();
+  if (!q) { alert("Entre un nom d'objet d'abord !"); return; }
+  if (site === 'vinted' || site === 'both') window.open('https://www.vinted.fr/catalog?search_text=' + encodeURIComponent(q), '_blank');
+  if (site === 'lbc' || site === 'both') setTimeout(function(){ window.open('https://www.leboncoin.fr/recherche?text=' + encodeURIComponent(q), '_blank'); }, 400);
+}
+</script>
+</body>
+</html>
