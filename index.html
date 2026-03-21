@@ -1,235 +1,170 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chercheur de prix</title>
-<style>
-  :root {
-    --bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --card: white;
-    --text: #111;
-    --text2: #aaa;
-    --border: #f0f0f0;
-    --input-bg: #fafafa;
-    --suggestion-hover: #f5f0ff;
-    --tip-bg: linear-gradient(135deg, #fff8e1, #fff3cd);
-    --tip-color: #856404;
-    --tip-border: #ffc107;
-  }
-  .dark {
-    --bg: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    --card: #1e1e2e;
-    --text: #eee;
-    --text2: #666;
-    --border: #333;
-    --input-bg: #2a2a3e;
-    --suggestion-hover: #2a2a4e;
-    --tip-bg: linear-gradient(135deg, #2a2510, #1e1a08);
-    --tip-color: #d4a017;
-    --tip-border: #856404;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, sans-serif; background: var(--bg); min-height: 100vh; padding: 2rem 1rem; transition: all 0.3s; }
-  .app { max-width: 420px; margin: 0 auto; }
-  .header { text-align: center; margin-bottom: 2rem; position: relative; }
-  .logo { font-size: 40px; margin-bottom: 8px; }
-  h1 { font-size: 26px; font-weight: 700; color: white; margin-bottom: 4px; }
-  .sub { font-size: 14px; color: rgba(255,255,255,0.75); }
-  .dark-toggle { position: absolute; top: 0; right: 0; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 18px; cursor: pointer; color: white; }
-  .card { background: var(--card); border-radius: 20px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
-  .card-title { font-size: 12px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
-  .search-wrap { position: relative; }
-  input[type=text] { width: 100%; padding: 14px 14px 14px 44px; font-size: 15px; border: 2px solid var(--border); border-radius: 14px; background: var(--input-bg); color: var(--text); transition: border 0.2s; }
-  input[type=text]:focus { outline: none; border-color: #667eea; background: var(--card); }
-  .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 18px; }
-  .suggestions { background: var(--card); border: 2px solid #667eea; border-radius: 14px; margin-top: 6px; overflow: hidden; display: none; max-height: 300px; overflow-y: auto; }
-  .suggestion-item { padding: 12px 16px; font-size: 14px; color: var(--text); cursor: pointer; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
-  .suggestion-item:last-child { border-bottom: none; }
-  .suggestion-item:hover { background: var(--suggestion-hover); }
-  .history-label { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; padding: 10px 16px 4px; }
-  .divider { text-align: center; font-size: 12px; color: var(--text2); margin: 1rem 0; font-weight: 600; letter-spacing: 1px; }
-  .sites { display: flex; flex-direction: column; gap: 10px; }
-  .btn { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-radius: 16px; border: none; cursor: pointer; width: 100%; transition: transform 0.15s; }
-  .btn:active { transform: scale(0.97); }
-  .btn.vinted { background: linear-gradient(135deg, #09B1BA, #06d6a0); }
-  .btn.lbc { background: linear-gradient(135deg, #FF6E14, #ff9a44); }
-  .btn.both { background: linear-gradient(135deg, #667eea, #764ba2); }
-  .btn-label { font-size: 15px; font-weight: 700; color: white; text-align: left; }
-  .btn-sub { font-size: 11px; color: rgba(255,255,255,0.8); margin-top: 2px; }
-  .arrow { font-size: 20px; color: rgba(255,255,255,0.7); }
-  .tip { background: var(--tip-bg); border-radius: 16px; padding: 14px 16px; font-size: 13px; color: var(--tip-color); line-height: 1.6; border-left: 4px solid var(--tip-border); margin-bottom: 1rem; }
-  .price-card { background: var(--card); border-radius: 20px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
-  .price-input-wrap { display: flex; gap: 10px; margin-bottom: 1rem; }
-.price-input-wrap input[type=number] { width: 100%; padding: 12px 14px; font-size: 15px; border: 2px solid var(--border); border-radius: 14px; background: var(--input-bg); color: var(--text); }
-  .price-input-wrap input[type=number]:focus { outline: none; border-color: #667eea; }
-  .price-result { display: none; text-align: center; padding: 14px; border-radius: 14px; font-size: 16px; font-weight: 700; margin-bottom: 1rem; }
-  .price-result.good { background: #d4edda; color: #155724; }
-  .price-result.ok { background: #fff3cd; color: #856404; }
-  .price-result.bad { background: #f8d7da; color: #721c24; }
-  .price-btn { width: 100%; padding: 14px; border-radius: 14px; border: none; background: linear-gradient(135deg, #667eea, #764ba2); color: white; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 10px; }
-  .whatsapp-btn { width: 100%; padding: 14px; border-radius: 14px; border: none; background: linear-gradient(135deg, #25D366, #128C7E); color: white; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-</style>
-</head>
-<body>
-<div class="app">
-  <div class="header">
-    <div class="logo">🎮</div>
-    <h1>Chercheur de prix</h1>
-    <p class="sub">Jeux vidéos & brocante</p>
-    <button class="dark-toggle" onclick="toggleDark()" id="darkBtn">🌙</button>
-  </div>
-
-  <div class="card">
-    <div class="card-title">Rechercher les prix</div>
-    <div class="search-wrap">
-      <span class="search-icon">🎮</span>
-      <input type="text" id="q" placeholder="Ex: Pokemon Rouge, PS2..." autocomplete="off" oninput="showSuggestions()" onfocus="showSuggestions()" />
-    </div>
-    <div class="suggestions" id="suggestions"></div>
-    <div class="divider">— CHERCHER SUR —</div>
-    <div class="sites">
-      <button class="btn vinted" onclick="go('vinted')">
-        <div><div class="btn-label">Vinted</div><div class="btn-sub">Prix entre particuliers</div></div>
-        <span class="arrow">→</span>
-      </button>
-      <button class="btn lbc" onclick="go('lbc')">
-        <div><div class="btn-label">Leboncoin</div><div class="btn-sub">Annonces locales</div></div>
-        <span class="arrow">→</span>
-      </button>
-      <button class="btn both" onclick="go('both')">
-        <div><div class="btn-label">Les deux en même temps</div><div class="btn-sub">Vinted + Leboncoin</div></div>
-        <span class="arrow">⚡</span>
-      </button>
-    </div>
-  </div>
-
-  <div class="price-card">
-    <div class="card-title">💰 C'est une bonne affaire ?</div>
-    <div class="price-input-wrap">
-      <input type="number" id="price" placeholder="Prix demandé (€)" />
-      <input type="number" id="market" placeholder="Prix marché (€)" />
-    </div>
-    <button class="price-btn" onclick="checkPrice()">Analyser le prix</button>
-    <div class="price-result" id="price-result"></div>
-    <button class="whatsapp-btn" onclick="shareWhatsApp()">📲 Partager sur WhatsApp</button>
-  </div>
-
-  <div class="tip">💡 <strong>Astuce :</strong> Tape le nom du jeu, compare les prix et vérifie si c'est une bonne affaire !</div>
-</div>
-
-<script>
 var predefined = [
+  // Consoles
   "Nintendo NES","Super Nintendo SNES","Mega Drive Sega","Game Boy","Game Boy Color","Game Boy Advance",
   "Nintendo 64","GameCube","Nintendo DS","Nintendo DSi","Nintendo 3DS","Nintendo Switch",
-  "PlayStation 1 PS1","PlayStation 2 PS2","PlayStation 3 PS3","PlayStation 4 PS4","PSP","PS Vita",
-  "Xbox","Xbox 360","Xbox One",
-  "Super Mario Bros NES","Super Mario World SNES","Super Mario 64 N64","Super Mario Odyssey Switch",
-  "Mario Kart 64","Mario Kart Wii","Mario Kart 8 Switch",
+  "PlayStation 1 PS1","PlayStation 2 PS2","PlayStation 3 PS3","PlayStation 4 PS4","PlayStation 5 PS5","PSP","PS Vita",
+  "Xbox","Xbox 360","Xbox One","Xbox Series X","Xbox Series S",
+  // PS1
+  "Final Fantasy VII PS1","Final Fantasy VIII PS1","Final Fantasy IX PS1",
+  "Final Fantasy Tactics PS1","Chrono Cross PS1","Xenogears PS1",
+  "Suikoden PS1","Suikoden II PS1","Castlevania Symphony of the Night PS1",
+  "Metal Gear Solid PS1","Resident Evil PS1","Resident Evil 2 PS1","Resident Evil 3 Nemesis PS1",
+  "Silent Hill PS1","Tomb Raider PS1","Tomb Raider II PS1","Tomb Raider III PS1",
+  "Crash Bandicoot PS1","Crash Bandicoot 2 PS1","Crash Bandicoot 3 Warped PS1","Crash Team Racing PS1",
+  "Spyro the Dragon PS1","Spyro 2 Ripto's Rage PS1","Spyro Year of the Dragon PS1",
+  "Tekken PS1","Tekken 2 PS1","Tekken 3 PS1",
+  "Street Fighter Alpha PS1","Street Fighter Alpha 2 PS1","Street Fighter Alpha 3 PS1",
+  "Mortal Kombat 3 PS1","Mortal Kombat Trilogy PS1","Mortal Kombat 4 PS1",
+  "Soul Blade PS1","Soul Calibur PS1","Virtua Fighter PS1","Virtua Fighter 2 PS1",
+  "King of Fighters 95 PS1","King of Fighters 97 PS1","King of Fighters 98 PS1",
+  "Samurai Shodown III PS1","Fatal Fury Mark of the Wolves PS1",
+  "Bloody Roar PS1","Bloody Roar 2 PS1","Bushido Blade PS1","Bushido Blade 2 PS1",
+  "Parasite Eve PS1","Parasite Eve II PS1","Vagrant Story PS1",
+  "Legend of Dragoon PS1","Legend of Mana PS1","Star Ocean The Second Story PS1",
+  "Wild Arms PS1","Wild Arms 2 PS1","Grandia PS1",
+  "Breath of Fire III PS1","Breath of Fire IV PS1","Dragon Quest VII PS1",
+  "Tales of Destiny PS1","Tales of Eternia PS1",
+  "Persona PS1","Persona 2 Innocent Sin PS1","Persona 2 Eternal Punishment PS1",
+  "Lunar Silver Star Story Complete PS1","Lunar 2 Eternal Blue Complete PS1",
+  "Arc the Lad PS1","Arc the Lad II PS1","Arc the Lad III PS1",
+  "Front Mission 3 PS1","Tactics Ogre PS1","Ogre Battle PS1",
+  "Alundra PS1","Brave Fencer Musashi PS1","Medievil PS1","Medievil 2 PS1",
+  "Ape Escape PS1","PaRappa the Rapper PS1","Bust a Groove PS1",
+  "Dance Dance Revolution PS1","Vib-Ribbon PS1","Crash Bash PS1",
+  "Rayman PS1","Oddworld Abe's Oddysee PS1","Oddworld Abe's Exoddus PS1",
+  "Klonoa Door to Phantomile PS1","Mega Man 8 PS1",
+  "Mega Man X4 PS1","Mega Man X5 PS1","Mega Man X6 PS1",
+  "Mega Man Legends PS1","Mega Man Legends 2 PS1","Misadventures of Tron Bonne PS1",
+  "Dino Crisis PS1","Dino Crisis 2 PS1","Gex PS1","Gex Enter the Gecko PS1",
+  "Twisted Metal PS1","Twisted Metal 2 PS1","Twisted Metal 3 PS1","Twisted Metal 4 PS1",
+  "Road Rash 3D PS1","Jet Moto PS1","Jet Moto 2 PS1",
+  "Need for Speed PS1","Need for Speed II PS1","Need for Speed III Hot Pursuit PS1",
+  "Need for Speed High Stakes PS1","Need for Speed Porsche Unleashed PS1",
+  "Gran Turismo PS1","Gran Turismo 2 PS1","Driver PS1","Driver 2 PS1",
+  "Ridge Racer PS1","Ridge Racer Revolution PS1","Ridge Racer Type 4 PS1",
+  "Wipeout PS1","Wipeout 2097 PS1","Wipeout 3 PS1",
+  "Ace Combat PS1","Ace Combat 2 PS1","Ace Combat 3 PS1",
+  "Syphon Filter PS1","Syphon Filter 2 PS1","Syphon Filter 3 PS1",
+  "Medal of Honor PS1","Medal of Honor Underground PS1",
+  "Armored Core PS1","Armored Core Master of Arena PS1",
+  "Dynasty Warriors PS1","Tenchu Stealth Assassins PS1","Tenchu 2 PS1",
+  "Colin McRae Rally PS1","Colin McRae Rally 2 PS1","V-Rally PS1","V-Rally 2 PS1",
+  // PS2
+  "GTA San Andreas PS2","GTA Vice City PS2","GTA III PS2",
+  "God of War PS2","God of War II PS2","Shadow of the Colossus PS2","Ico PS2",
+  "Jak and Daxter PS2","Jak II PS2","Jak 3 PS2",
+  "Ratchet and Clank PS2","Ratchet and Clank Going Commando PS2","Ratchet and Clank Up Your Arsenal PS2",
+  "Sly Cooper PS2","Sly 2 Band of Thieves PS2","Sly 3 Honor Among Thieves PS2",
+  "Kingdom Hearts PS2","Kingdom Hearts II PS2",
+  "Final Fantasy X PS2","Final Fantasy X-2 PS2","Final Fantasy XII PS2",
+  "Dragon Quest VIII PS2","Persona 3 PS2","Persona 4 PS2",
+  "Okami PS2","Devil May Cry PS2","Devil May Cry 2 PS2","Devil May Cry 3 PS2",
+  "Resident Evil 4 PS2","Silent Hill 2 PS2","Silent Hill 3 PS2",
+  "Metal Gear Solid 2 Sons of Liberty PS2","Metal Gear Solid 3 Snake Eater PS2",
+  "Ninja Gaiden Sigma PS2","Onimusha PS2","Onimusha 2 PS2","Onimusha 3 PS2",
+  "Tales of the Abyss PS2","Tales of Legendia PS2",
+  "Star Wars Battlefront PS2","Star Wars Battlefront II PS2",
+  "Spider-Man PS2","Spider-Man 2 PS2","X-Men Legends PS2","Marvel Ultimate Alliance PS2",
+  "Crash Bandicoot Wrath of Cortex PS2","Crash Nitro Kart PS2","Crash Twinsanity PS2",
+  "Spyro Enter the Dragonfly PS2","Sonic Heroes PS2","Shadow the Hedgehog PS2",
+  "Burnout 3 Takedown PS2","Need for Speed Underground PS2","Need for Speed Underground 2 PS2",
+  "Need for Speed Most Wanted PS2","Twisted Metal Black PS2","Bully PS2",
+  "Manhunt PS2","The Warriors PS2","Scarface PS2","Mafia PS2","Mafia II PS2",
+  "Splinter Cell PS2","Prince of Persia Sands of Time PS2","Beyond Good and Evil PS2",
+  "Guitar Hero PS2","Guitar Hero II PS2","Dance Dance Revolution PS2",
+  "FIFA PS2","Pro Evolution Soccer PS2","Tony Hawk Pro Skater 3 PS2",
+  "SSX Tricky PS2","Katamari Damacy PS2","We Love Katamari PS2",
+  "Castlevania Lament of Innocence PS2","Mega Man X7 PS2","Mega Man X8 PS2",
+  // PS3
+  "Uncharted Drake's Fortune PS3","Uncharted 2 Among Thieves PS3","Uncharted 3 PS3",
+  "The Last of Us PS3","God of War III PS3","Infamous PS3","Infamous 2 PS3",
+  "LittleBigPlanet PS3","LittleBigPlanet 2 PS3","Killzone 2 PS3",
+  "Gran Turismo 5 PS3","Heavy Rain PS3","Beyond Two Souls PS3","Demon's Souls PS3",
+  "Dark Souls PS3","Dark Souls II PS3","Batman Arkham Asylum PS3","Batman Arkham City PS3",
+  "Red Dead Redemption PS3","GTA IV PS3","GTA V PS3","Skyrim PS3","Fallout 3 PS3",
+  "Assassin's Creed PS3","Assassin's Creed II PS3","Assassin's Creed Brotherhood PS3",
+  "Far Cry 3 PS3","Bioshock PS3","Bioshock Infinite PS3","Borderlands PS3","Borderlands 2 PS3",
+  "Call of Duty 4 Modern Warfare PS3","Call of Duty Modern Warfare 2 PS3",
+  "Call of Duty Black Ops PS3","Battlefield 3 PS3","Mass Effect 2 PS3","Mass Effect 3 PS3",
+  "Final Fantasy XIII PS3","Ni No Kuni PS3","Tales of Xillia PS3","Persona 5 PS3",
+  "Yakuza 0 PS3","Valkyria Chronicles PS3","Metal Gear Solid 4 PS3",
+  "Metal Gear Rising Revengeance PS3","Resident Evil 5 PS3","Dead Space PS3",
+  "Sleeping Dogs PS3","L.A. Noire PS3","Saints Row The Third PS3","Tomb Raider 2013 PS3",
+  // Mega Drive
+  "Sonic the Hedgehog Mega Drive","Sonic the Hedgehog 2 Mega Drive","Sonic the Hedgehog 3 Mega Drive",
+  "Sonic and Knuckles Mega Drive","Streets of Rage Mega Drive","Streets of Rage 2 Mega Drive",
+  "Golden Axe Mega Drive","Altered Beast Mega Drive","Comix Zone Mega Drive",
+  "Earthworm Jim Mega Drive","Aladdin Mega Drive","The Lion King Mega Drive",
+  "Mortal Kombat Mega Drive","NBA Jam Mega Drive","Gunstar Heroes Mega Drive",
+  "Castlevania Bloodlines Mega Drive","Phantasy Star IV Mega Drive","Shining Force Mega Drive",
+  "Road Rash Mega Drive","OutRun Mega Drive","Fatal Fury 2 Mega Drive",
+  // Super Nintendo
+  "Super Mario World SNES","Super Mario Kart SNES","Super Mario RPG SNES",
+  "Zelda A Link to the Past SNES","Super Metroid SNES","Kirby Super Star SNES",
+  "Donkey Kong Country SNES","Star Fox SNES","F-Zero SNES","Earthbound SNES",
+  "Final Fantasy IV SNES","Final Fantasy VI SNES","Chrono Trigger SNES","Secret of Mana SNES",
+  "Mega Man X SNES","Super Castlevania IV SNES","Street Fighter II SNES","Super Bomberman SNES",
+  // Game Boy
+  "Tetris Game Boy","Pokemon Rouge Game Boy","Pokemon Bleu Game Boy","Pokemon Jaune Game Boy",
+  "Zelda Link's Awakening Game Boy","Super Mario Land Game Boy","Super Mario Land 2 Game Boy",
+  "Kirby's Dream Land Game Boy","Metroid II Return of Samus Game Boy","DuckTales Game Boy",
+  // Game Boy Color
+  "Pokemon Or GBC","Pokemon Argent GBC","Pokemon Cristal GBC",
+  "Zelda Oracle of Ages GBC","Zelda Link's Awakening DX GBC","Shantae GBC","Metal Gear Solid GBC",
+  // Game Boy Advance
+  "Pokemon Rouge Feu GBA","Pokemon Vert Feuille GBA","Pokemon Rubis GBA","Pokemon Emeraude GBA",
+  "Zelda Minish Cap GBA","Super Mario Advance GBA","Mario and Luigi Superstar Saga GBA",
+  "Metroid Fusion GBA","Fire Emblem GBA","Golden Sun GBA","Advance Wars GBA",
+  "Castlevania Aria of Sorrow GBA","Mega Man Zero GBA","Final Fantasy Tactics Advance GBA","Mother 3 GBA",
+  // GameCube
+  "Super Smash Bros Melee GameCube","Zelda Wind Waker GameCube","Super Mario Sunshine GameCube",
+  "Luigi's Mansion GameCube","Mario Kart Double Dash GameCube","Paper Mario Thousand Year Door GameCube",
+  "Pokemon Colosseum GameCube","Metroid Prime GameCube","F-Zero GX GameCube",
+  "Pikmin GameCube","Animal Crossing GameCube","Resident Evil 4 GameCube",
+  "Tales of Symphonia GameCube","Soul Calibur II GameCube","Killer7 GameCube",
+  // Nintendo Switch
+  "Mario Kart 8 Deluxe Switch","Animal Crossing New Horizons Switch","Super Smash Bros Ultimate Switch",
+  "Super Mario Odyssey Switch","Pokemon Ecarlate Switch","Pokemon Violet Switch",
+  "Zelda Breath of the Wild Switch","Zelda Tears of the Kingdom Switch",
+  "Super Mario Party Switch","Splatoon 3 Switch","Kirby and the Forgotten Land Switch",
+  "Stardew Valley Switch","Hollow Knight Switch","Hades Switch",
+  "Super Mario Bros Wonder Switch","Fire Emblem Three Houses Switch","Metroid Dread Switch",
+  "Monster Hunter Rise Switch","Persona 5 Royal Switch","Overcooked 2 Switch",
+  // PS4
+  "God of War PS4","God of War Ragnarok PS4","The Last of Us Part I PS4",
+  "The Last of Us Part II PS4","Spider-Man PS4","Horizon Zero Dawn PS4",
+  "Ghost of Tsushima PS4","Uncharted 4 PS4","Detroit Become Human PS4",
+  "Bloodborne PS4","Dark Souls III PS4","Elden Ring PS4","Red Dead Redemption 2 PS4",
+  "GTA V PS4","Cyberpunk 2077 PS4","Assassin's Creed Valhalla PS4",
+  "Far Cry 6 PS4","Days Gone PS4","Stardew Valley PS4","FIFA PS4","NBA 2K PS4",
+  "Mortal Kombat 11 PS4","Tekken 7 PS4","Monster Hunter World PS4",
+  "Final Fantasy VII Remake PS4","Persona 5 Royal PS4","Yakuza Like a Dragon PS4",
+  "Fallout 4 PS4","Resident Evil Village PS4","It Takes Two PS4",
+  "Batman Arkham Knight PS4","Tales of Arise PS4","Star Wars Jedi Fallen Order PS4",
+  // PS5
+  "Demon's Souls PS5","Ratchet and Clank Rift Apart PS5","Returnal PS5",
+  "Astro's Playroom PS5","Astro Bot PS5","Spider-Man 2 PS5",
+  "God of War Ragnarok PS5","The Last of Us Part I PS5","Ghost of Tsushima Director's Cut PS5",
+  "Gran Turismo 7 PS5","Elden Ring PS5","Cyberpunk 2077 PS5","GTA VI PS5",
+  "Assassin's Creed Mirage PS5","Star Wars Jedi Survivor PS5",
+  "Hogwarts Legacy PS5","Baldur's Gate 3 PS5","Final Fantasy XVI PS5",
+  "Final Fantasy VII Rebirth PS5","Persona 3 Reload PS5","Dragon's Dogma 2 PS5",
+  "Monster Hunter Wilds PS5","Resident Evil 4 Remake PS5","Silent Hill 2 Remake PS5",
+  "Alan Wake 2 PS5","Street Fighter 6 PS5","Tekken 8 PS5",
+  "Dragon Ball Sparking Zero PS5","EA Sports FC 25 PS5",
+  "Like a Dragon Infinite Wealth PS5","Lies of P PS5","Diablo IV PS5",
+  // Pokemon classiques
   "Pokemon Rouge","Pokemon Bleu","Pokemon Or","Pokemon Argent","Pokemon Cristal",
   "Pokemon Rubis","Pokemon Saphir","Pokemon Emeraude","Pokemon Diamant","Pokemon Perle",
   "Pokemon X","Pokemon Y","Pokemon Soleil","Pokemon Lune",
-  "Zelda Ocarina of Time","Zelda Majora Mask","Zelda Breath of the Wild","Zelda Tears of the Kingdom",
-  "Zelda A Link to the Past","Zelda Wind Waker","Zelda Twilight Princess",
-  "Sonic the Hedgehog Mega Drive","Sonic 2 Mega Drive","Sonic 3 Mega Drive",
-  "Final Fantasy VII PS1","Final Fantasy VIII PS1","Final Fantasy X PS2",
-  "GTA San Andreas PS2","GTA Vice City PS2","GTA V PS3","GTA V PS4",
-  "Crash Bandicoot PS1","Spyro PS1","Tekken 3 PS1","Metal Gear Solid PS1",
-  "God of War PS2","Shadow of the Colossus PS2",
+  // Zelda classiques
+  "Zelda Ocarina of Time","Zelda Majora Mask",
+  // Halo Xbox
   "Halo Xbox","Halo 2 Xbox","Halo 3 Xbox 360",
+  // Accessoires
   "Manette Nintendo NES","Manette Super Nintendo","Manette N64","Manette GameCube",
   "Manette PS1","Manette PS2","Manette Xbox 360","Manette Switch Pro",
-  "Cartouche NES","Cartouche SNES","Cartouche Game Boy","Cartouche N64"
+  "Manette PS4 DualShock","Manette PS5 DualSense",
+  "Cartouche NES","Cartouche SNES","Cartouche Game Boy","Cartouche N64",
+  "Console Game Boy","Console Game Boy Advance SP"
 ];
-
-function toggleDark() {
-  document.body.classList.toggle('dark');
-  document.getElementById('darkBtn').textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
-}
-function getHistory() {
-  try { return JSON.parse(localStorage.getItem('jv_history') || '[]'); } catch(e) { return []; }
-}
-function saveHistory(q) {
-  try {
-    var h = getHistory().filter(function(x){ return x !== q; });
-    h.unshift(q);
-    localStorage.setItem('jv_history', JSON.stringify(h.slice(0, 8)));
-  } catch(e) {}
-}
-function showSuggestions() {
-  var q = document.getElementById('q').value.trim().toLowerCase();
-  var box = document.getElementById('suggestions');
-  var html = '';
-  var history = getHistory();
-  if (q === '') {
-    if (history.length > 0) {
-      html += '<div class="history-label">🕐 Recherches récentes</div>';
-      history.slice(0, 4).forEach(function(h) {
-        html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + h.replace(/'/g,"\\'") + '\')"><span>🕐</span>' + h + '</div>';
-      });
-    }
-    html += '<div class="history-label">🎮 Populaires</div>';
-    predefined.slice(0, 6).forEach(function(p) {
-      html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + p.replace(/'/g,"\\'") + '\')"><span>🎮</span>' + p + '</div>';
-    });
-  } else {
-    var filtered = predefined.filter(function(p){ return p.toLowerCase().indexOf(q) > -1; });
-    var hFiltered = history.filter(function(h){ return h.toLowerCase().indexOf(q) > -1; });
-    if (hFiltered.length > 0) {
-      html += '<div class="history-label">🕐 Récents</div>';
-      hFiltered.slice(0,3).forEach(function(h) {
-        html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + h.replace(/'/g,"\\'") + '\')"><span>🕐</span>' + h + '</div>';
-      });
-    }
-    filtered.slice(0, 8).forEach(function(p) {
-      html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + p.replace(/'/g,"\\'") + '\')"><span>🎮</span>' + p + '</div>';
-    });
-  }
-  if (html === '') { box.style.display = 'none'; return; }
-  box.innerHTML = html;
-  box.style.display = 'block';
-}
-function selectSuggestion(val) {
-  document.getElementById('q').value = val;
-  document.getElementById('suggestions').style.display = 'none';
-}
-document.addEventListener('click', function(e) {
-  if (!e.target.closest('.search-wrap') && !e.target.closest('.suggestions')) {
-    document.getElementById('suggestions').style.display = 'none';
-  }
-});
-function go(site) {
-  var q = document.getElementById('q').value.trim();
-  if (!q) { alert("Entre un nom de jeu d'abord !"); return; }
-  saveHistory(q);
-  document.getElementById('suggestions').style.display = 'none';
-  if (site === 'vinted' || site === 'both') window.open('https://www.vinted.fr/catalog?search_text=' + encodeURIComponent(q), '_blank');
-  if (site === 'lbc' || site === 'both') setTimeout(function(){ window.open('https://www.leboncoin.fr/recherche?text=' + encodeURIComponent(q), '_blank'); }, 400);
-}
-function checkPrice() {
-  var price = parseFloat(document.getElementById('price').value);
-  var market = parseFloat(document.getElementById('market').value);
-  var result = document.getElementById('price-result');
-  if (!price || !market) { alert('Entre les deux prix !'); return; }
-  var diff = ((market - price) / market) * 100;
-  result.style.display = 'block';
-  if (diff >= 30) {
-    result.className = 'price-result good';
-    result.textContent = '✅ Bonne affaire ! ' + Math.round(diff) + '% moins cher que le marché';
-  } else if (diff >= 0) {
-    result.className = 'price-result ok';
-    result.textContent = '⚠️ Prix correct, ' + Math.round(diff) + '% sous le marché';
-  } else {
-    result.className = 'price-result bad';
-    result.textContent = '❌ Trop cher ! ' + Math.round(Math.abs(diff)) + '% au-dessus du marché';
-  }
-}
-function shareWhatsApp() {
-  var q = document.getElementById('q').value.trim();
-  var price = document.getElementById('price').value;
-  var msg = q ? 'Regarde ce que j\'ai trouvé en brocante : ' + q + (price ? ' à ' + price + '€' : '') + ' - fouzi91.github.io/Fouzi-Bro-Android' : 'Cherche les prix sur fouzi91.github.io/Fouzi-Bro-Android';
-  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
-}
-</script>
-</body>
-</html>
