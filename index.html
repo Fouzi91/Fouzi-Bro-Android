@@ -24,7 +24,7 @@
   input { width: 100%; padding: 14px 14px 14px 44px; font-size: 15px; border: 2px solid #f0f0f0; border-radius: 14px; background: #fafafa; color: #111; transition: border 0.2s; }
   input:focus { outline: none; border-color: #667eea; background: white; }
   .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 18px; }
-  .suggestions { background: white; border: 2px solid #667eea; border-radius: 14px; margin-top: 6px; overflow: hidden; display: none; }
+  .suggestions { background: white; border: 2px solid #667eea; border-radius: 14px; margin-top: 6px; overflow: hidden; display: none; max-height: 300px; overflow-y: auto; }
   .suggestion-item { padding: 12px 16px; font-size: 14px; color: #333; cursor: pointer; border-bottom: 1px solid #f5f5f5; display: flex; align-items: center; gap: 10px; }
   .suggestion-item:last-child { border-bottom: none; }
   .suggestion-item:hover { background: #f5f0ff; }
@@ -47,9 +47,9 @@
 <body>
 <div class="app">
   <div class="header">
-    <div class="logo">🛍️</div>
+    <div class="logo">🎮</div>
     <h1>Chercheur de prix</h1>
-    <p class="sub">Pour les brocanteurs malins</p>
+    <p class="sub">Jeux vidéos & brocante</p>
   </div>
 
   <div class="card">
@@ -71,8 +71,8 @@
   <div class="card">
     <div class="card-title">Rechercher les prix</div>
     <div class="search-wrap">
-      <span class="search-icon">✏️</span>
-      <input type="text" id="q" placeholder="Colle le nom de l'objet ici..." autocomplete="off" oninput="showSuggestions()" onfocus="showSuggestions()" />
+      <span class="search-icon">🎮</span>
+      <input type="text" id="q" placeholder="Ex: Pokemon Rouge, PS2..." autocomplete="off" oninput="showSuggestions()" onfocus="showSuggestions()" />
     </div>
     <div class="suggestions" id="suggestions"></div>
     <div class="divider">— CHERCHER SUR —</div>
@@ -107,52 +107,59 @@
     </div>
   </div>
 
-  <div class="tip">💡 <strong>Astuce :</strong> Ouvre Google Lens, pointe l'objet, copie le nom détecté, colle-le ici et recherche !</div>
+  <div class="tip">💡 <strong>Astuce :</strong> Ouvre Google Lens, scanne le jeu, copie le nom, colle-le ici et recherche !</div>
 </div>
 
 <script>
 var predefined = [
-  "Lampe Jielde","Lampe industrielle","Lampe vintage","Lustre ancien",
-  "Chaise Tolix","Chaise bistrot","Fauteuil vintage","Canapé cuir",
-  "Table basse vintage","Commode ancienne","Buffet ancien","Armoire ancienne",
-  "Tableau ancien","Miroir doré","Horloge ancienne","Pendule ancienne",
-  "Service vaisselle","Assiette ancienne","Carafe cristal","Vase Lalique",
-  "Montre ancienne","Bijou vintage","Broche ancienne","Collier vintage",
-  "Appareil photo vintage","Radio ancienne","Téléphone vintage","Machine à écrire",
-  "Livre ancien","Affiche vintage","Carte postale ancienne","Timbre collection",
-  "Jouet ancien","Poupée ancienne","Voiture miniature","Figurine porcelaine",
-  "Bronze ancien","Statue ancienne","Bougeoir argent","Couverts argent"
+  "Nintendo NES","Super Nintendo SNES","Mega Drive Sega","Game Boy","Game Boy Color","Game Boy Advance",
+  "Nintendo 64","GameCube","Nintendo DS","Nintendo DSi","Nintendo 3DS","Nintendo Switch",
+  "PlayStation 1 PS1","PlayStation 2 PS2","PlayStation 3 PS3","PlayStation 4 PS4","PSP","PS Vita",
+  "Xbox","Xbox 360","Xbox One",
+  "Super Mario Bros NES","Super Mario World SNES","Super Mario 64 N64","Super Mario Odyssey Switch",
+  "Mario Kart 64","Mario Kart Wii","Mario Kart 8 Switch",
+  "Pokemon Rouge","Pokemon Bleu","Pokemon Or","Pokemon Argent","Pokemon Cristal",
+  "Pokemon Rubis","Pokemon Saphir","Pokemon Emeraude","Pokemon Diamant","Pokemon Perle",
+  "Pokemon X","Pokemon Y","Pokemon Soleil","Pokemon Lune",
+  "Zelda Ocarina of Time","Zelda Majora Mask","Zelda Breath of the Wild","Zelda Tears of the Kingdom",
+  "Zelda A Link to the Past","Zelda Wind Waker","Zelda Twilight Princess",
+  "Sonic the Hedgehog Mega Drive","Sonic 2 Mega Drive","Sonic 3 Mega Drive",
+  "Final Fantasy VII PS1","Final Fantasy VIII PS1","Final Fantasy X PS2",
+  "GTA San Andreas PS2","GTA Vice City PS2","GTA V PS3","GTA V PS4",
+  "Crash Bandicoot PS1","Spyro PS1","Tekken 3 PS1","Metal Gear Solid PS1",
+  "God of War PS2","Shadow of the Colossus PS2","Ico PS2",
+  "Halo Xbox","Halo 2 Xbox","Halo 3 Xbox 360",
+  "Manette Nintendo NES","Manette Super Nintendo","Manette N64","Manette GameCube",
+  "Manette PS1","Manette PS2","Manette Xbox 360","Manette Switch Pro",
+  "Cartouche NES","Cartouche SNES","Cartouche Game Boy","Cartouche N64",
+  "Console portable Game Boy","Console Game Boy Advance SP"
 ];
 
 function getHistory() {
-  try { return JSON.parse(localStorage.getItem('brocante_history') || '[]'); } catch(e) { return []; }
+  try { return JSON.parse(localStorage.getItem('jv_history') || '[]'); } catch(e) { return []; }
 }
-
 function saveHistory(q) {
   try {
     var h = getHistory().filter(function(x){ return x !== q; });
     h.unshift(q);
-    localStorage.setItem('brocante_history', JSON.stringify(h.slice(0, 8)));
+    localStorage.setItem('jv_history', JSON.stringify(h.slice(0, 8)));
   } catch(e) {}
 }
-
 function showSuggestions() {
   var q = document.getElementById('q').value.trim().toLowerCase();
   var box = document.getElementById('suggestions');
   var html = '';
   var history = getHistory();
-
   if (q === '') {
     if (history.length > 0) {
       html += '<div class="history-label">🕐 Recherches récentes</div>';
       history.slice(0, 4).forEach(function(h) {
-        html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + h.replace(/'/g,"\'") + '\')"><span class="suggestion-icon">🕐</span>' + h + '</div>';
+        html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + h.replace(/'/g,"\\'") + '\')"><span class="suggestion-icon">🕐</span>' + h + '</div>';
       });
     }
-    var popular = predefined.slice(0, 5);
-    html += '<div class="history-label">⭐ Populaires</div>';
-    popular.forEach(function(p) {
-      html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + p.replace(/'/g,"\'") + '\')"><span class="suggestion-icon">🏷️</span>' + p + '</div>';
+    html += '<div class="history-label">🎮 Populaires</div>';
+    predefined.slice(0, 6).forEach(function(p) {
+      html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + p.replace(/'/g,"\\'") + '\')"><span class="suggestion-icon">🎮</span>' + p + '</div>';
     });
   } else {
     var filtered = predefined.filter(function(p){ return p.toLowerCase().indexOf(q) > -1; });
@@ -160,35 +167,31 @@ function showSuggestions() {
     if (hFiltered.length > 0) {
       html += '<div class="history-label">🕐 Récents</div>';
       hFiltered.slice(0,3).forEach(function(h) {
-        html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + h.replace(/'/g,"\'") + '\')"><span class="suggestion-icon">🕐</span>' + h + '</div>';
+        html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + h.replace(/'/g,"\\'") + '\')"><span class="suggestion-icon">🕐</span>' + h + '</div>';
       });
     }
     if (filtered.length > 0) {
-      filtered.slice(0, 5).forEach(function(p) {
-        html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + p.replace(/'/g,"\'") + '\')"><span class="suggestion-icon">🏷️</span>' + p + '</div>';
+      filtered.slice(0, 8).forEach(function(p) {
+        html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + p.replace(/'/g,"\\'") + '\')"><span class="suggestion-icon">🎮</span>' + p + '</div>';
       });
     }
   }
-
   if (html === '') { box.style.display = 'none'; return; }
   box.innerHTML = html;
   box.style.display = 'block';
 }
-
 function selectSuggestion(val) {
   document.getElementById('q').value = val;
   document.getElementById('suggestions').style.display = 'none';
 }
-
 document.addEventListener('click', function(e) {
   if (!e.target.closest('.search-wrap') && !e.target.closest('.suggestions')) {
     document.getElementById('suggestions').style.display = 'none';
   }
 });
-
 function go(site) {
   var q = document.getElementById('q').value.trim();
-  if (!q) { alert("Entre un nom d'objet d'abord !"); return; }
+  if (!q) { alert("Entre un nom de jeu d'abord !"); return; }
   saveHistory(q);
   document.getElementById('suggestions').style.display = 'none';
   if (site === 'vinted' || site === 'both') window.open('https://www.vinted.fr/catalog?search_text=' + encodeURIComponent(q), '_blank');
