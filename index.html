@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chercheur de prix brocante</title>
+<title>Chercheur de prix</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 2rem 1rem; }
@@ -14,13 +14,7 @@
   .sub { font-size: 14px; color: rgba(255,255,255,0.75); }
   .card { background: white; border-radius: 20px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
   .card-title { font-size: 12px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
-  .camera-btns { display: flex; gap: 10px; }
-  .cam-btn { flex: 1; padding: 14px 10px; border-radius: 14px; border: none; font-size: 13px; font-weight: 700; color: white; cursor: pointer; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-  .cam-btn.lens { background: linear-gradient(135deg, #4facfe, #00f2fe); }
-  .cam-btn.images { background: linear-gradient(135deg, #f093fb, #f5576c); }
-  .cam-icon { font-size: 22px; }
-  .cam-sub { font-size: 10px; opacity: 0.85; font-weight: 400; }
-  .search-wrap { position: relative; margin-bottom: 0; }
+  .search-wrap { position: relative; }
   input { width: 100%; padding: 14px 14px 14px 44px; font-size: 15px; border: 2px solid #f0f0f0; border-radius: 14px; background: #fafafa; color: #111; transition: border 0.2s; }
   input:focus { outline: none; border-color: #667eea; background: white; }
   .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 18px; }
@@ -37,7 +31,6 @@
   .btn.vinted { background: linear-gradient(135deg, #09B1BA, #06d6a0); }
   .btn.lbc { background: linear-gradient(135deg, #FF6E14, #ff9a44); }
   .btn.both { background: linear-gradient(135deg, #667eea, #764ba2); }
-  .btn-left { display: flex; align-items: center; gap: 12px; }
   .btn-label { font-size: 15px; font-weight: 700; color: white; text-align: left; }
   .btn-sub { font-size: 11px; color: rgba(255,255,255,0.8); margin-top: 2px; }
   .arrow { font-size: 20px; color: rgba(255,255,255,0.7); }
@@ -53,22 +46,6 @@
   </div>
 
   <div class="card">
-    <div class="card-title">Identifier l'objet</div>
-    <div class="camera-btns">
-      <button class="cam-btn lens" onclick="window.open('https://lens.google.com','_blank')">
-        <span class="cam-icon">🔍</span>
-        <span>Google Lens</span>
-        <span class="cam-sub">Scanner un objet</span>
-      </button>
-      <button class="cam-btn images" onclick="window.open('https://images.google.com','_blank')">
-        <span class="cam-icon">📷</span>
-        <span>Google Images</span>
-        <span class="cam-sub">Recherche photo</span>
-      </button>
-    </div>
-  </div>
-
-  <div class="card">
     <div class="card-title">Rechercher les prix</div>
     <div class="search-wrap">
       <span class="search-icon">🎮</span>
@@ -78,36 +55,30 @@
     <div class="divider">— CHERCHER SUR —</div>
     <div class="sites">
       <button class="btn vinted" onclick="go('vinted')">
-        <div class="btn-left">
-          <div>
-            <div class="btn-label">Vinted</div>
-            <div class="btn-sub">Prix entre particuliers</div>
-          </div>
+        <div>
+          <div class="btn-label">Vinted</div>
+          <div class="btn-sub">Prix entre particuliers</div>
         </div>
         <span class="arrow">→</span>
       </button>
       <button class="btn lbc" onclick="go('lbc')">
-        <div class="btn-left">
-          <div>
-            <div class="btn-label">Leboncoin</div>
-            <div class="btn-sub">Annonces locales</div>
-          </div>
+        <div>
+          <div class="btn-label">Leboncoin</div>
+          <div class="btn-sub">Annonces locales</div>
         </div>
         <span class="arrow">→</span>
       </button>
       <button class="btn both" onclick="go('both')">
-        <div class="btn-left">
-          <div>
-            <div class="btn-label">Les deux en même temps</div>
-            <div class="btn-sub">Vinted + Leboncoin</div>
-          </div>
+        <div>
+          <div class="btn-label">Les deux en même temps</div>
+          <div class="btn-sub">Vinted + Leboncoin</div>
         </div>
         <span class="arrow">⚡</span>
       </button>
     </div>
   </div>
 
-  <div class="tip">💡 <strong>Astuce :</strong> Ouvre Google Lens, scanne le jeu, copie le nom, colle-le ici et recherche !</div>
+  <div class="tip">💡 <strong>Astuce :</strong> Tape le nom du jeu, sélectionne une suggestion et recherche sur Vinted ou Leboncoin !</div>
 </div>
 
 <script>
@@ -127,12 +98,12 @@ var predefined = [
   "Final Fantasy VII PS1","Final Fantasy VIII PS1","Final Fantasy X PS2",
   "GTA San Andreas PS2","GTA Vice City PS2","GTA V PS3","GTA V PS4",
   "Crash Bandicoot PS1","Spyro PS1","Tekken 3 PS1","Metal Gear Solid PS1",
-  "God of War PS2","Shadow of the Colossus PS2","Ico PS2",
+  "God of War PS2","Shadow of the Colossus PS2",
   "Halo Xbox","Halo 2 Xbox","Halo 3 Xbox 360",
   "Manette Nintendo NES","Manette Super Nintendo","Manette N64","Manette GameCube",
   "Manette PS1","Manette PS2","Manette Xbox 360","Manette Switch Pro",
   "Cartouche NES","Cartouche SNES","Cartouche Game Boy","Cartouche N64",
-  "Console portable Game Boy","Console Game Boy Advance SP"
+  "Console Game Boy","Console Game Boy Advance SP"
 ];
 
 function getHistory() {
