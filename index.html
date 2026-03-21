@@ -5,36 +5,72 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Chercheur de prix</title>
 <style>
+  :root {
+    --bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --card: white;
+    --text: #111;
+    --text2: #aaa;
+    --border: #f0f0f0;
+    --input-bg: #fafafa;
+    --suggestion-hover: #f5f0ff;
+    --tip-bg: linear-gradient(135deg, #fff8e1, #fff3cd);
+    --tip-color: #856404;
+    --tip-border: #ffc107;
+  }
+  .dark {
+    --bg: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    --card: #1e1e2e;
+    --text: #eee;
+    --text2: #666;
+    --border: #333;
+    --input-bg: #2a2a3e;
+    --suggestion-hover: #2a2a4e;
+    --tip-bg: linear-gradient(135deg, #2a2510, #1e1a08);
+    --tip-color: #d4a017;
+    --tip-border: #856404;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 2rem 1rem; }
+  body { font-family: -apple-system, sans-serif; background: var(--bg); min-height: 100vh; padding: 2rem 1rem; transition: all 0.3s; }
   .app { max-width: 420px; margin: 0 auto; }
-  .header { text-align: center; margin-bottom: 2rem; }
+  .header { text-align: center; margin-bottom: 2rem; position: relative; }
   .logo { font-size: 40px; margin-bottom: 8px; }
   h1 { font-size: 26px; font-weight: 700; color: white; margin-bottom: 4px; }
   .sub { font-size: 14px; color: rgba(255,255,255,0.75); }
-  .card { background: white; border-radius: 20px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
-  .card-title { font-size: 12px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
+  .dark-toggle { position: absolute; top: 0; right: 0; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 18px; cursor: pointer; color: white; }
+  .card { background: var(--card); border-radius: 20px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+  .card-title { font-size: 12px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
   .search-wrap { position: relative; }
-  input { width: 100%; padding: 14px 14px 14px 44px; font-size: 15px; border: 2px solid #f0f0f0; border-radius: 14px; background: #fafafa; color: #111; transition: border 0.2s; }
-  input:focus { outline: none; border-color: #667eea; background: white; }
+  input[type=text] { width: 100%; padding: 14px 14px 14px 44px; font-size: 15px; border: 2px solid var(--border); border-radius: 14px; background: var(--input-bg); color: var(--text); transition: border 0.2s; }
+  input[type=text]:focus { outline: none; border-color: #667eea; background: var(--card); }
   .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 18px; }
-  .suggestions { background: white; border: 2px solid #667eea; border-radius: 14px; margin-top: 6px; overflow: hidden; display: none; max-height: 300px; overflow-y: auto; }
-  .suggestion-item { padding: 12px 16px; font-size: 14px; color: #333; cursor: pointer; border-bottom: 1px solid #f5f5f5; display: flex; align-items: center; gap: 10px; }
+  .suggestions { background: var(--card); border: 2px solid #667eea; border-radius: 14px; margin-top: 6px; overflow: hidden; display: none; max-height: 300px; overflow-y: auto; }
+  .suggestion-item { padding: 12px 16px; font-size: 14px; color: var(--text); cursor: pointer; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
   .suggestion-item:last-child { border-bottom: none; }
-  .suggestion-item:hover { background: #f5f0ff; }
-  .suggestion-icon { font-size: 14px; color: #aaa; }
-  .history-label { font-size: 11px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 1px; padding: 10px 16px 4px; }
-  .divider { text-align: center; font-size: 12px; color: #bbb; margin: 1rem 0; font-weight: 600; letter-spacing: 1px; }
+  .suggestion-item:hover { background: var(--suggestion-hover); }
+  .history-label { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; padding: 10px 16px 4px; }
+  .divider { text-align: center; font-size: 12px; color: var(--text2); margin: 1rem 0; font-weight: 600; letter-spacing: 1px; }
   .sites { display: flex; flex-direction: column; gap: 10px; }
   .btn { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-radius: 16px; border: none; cursor: pointer; width: 100%; transition: transform 0.15s; }
   .btn:active { transform: scale(0.97); }
   .btn.vinted { background: linear-gradient(135deg, #09B1BA, #06d6a0); }
   .btn.lbc { background: linear-gradient(135deg, #FF6E14, #ff9a44); }
+  .btn.ebay { background: linear-gradient(135deg, #e53238, #f5af02); }
+  .btn.fb { background: linear-gradient(135deg, #1877f2, #42a5f5); }
   .btn.both { background: linear-gradient(135deg, #667eea, #764ba2); }
   .btn-label { font-size: 15px; font-weight: 700; color: white; text-align: left; }
   .btn-sub { font-size: 11px; color: rgba(255,255,255,0.8); margin-top: 2px; }
   .arrow { font-size: 20px; color: rgba(255,255,255,0.7); }
-  .tip { background: linear-gradient(135deg, #fff8e1, #fff3cd); border-radius: 16px; padding: 14px 16px; font-size: 13px; color: #856404; line-height: 1.6; border-left: 4px solid #ffc107; }
+  .tip { background: var(--tip-bg); border-radius: 16px; padding: 14px 16px; font-size: 13px; color: var(--tip-color); line-height: 1.6; border-left: 4px solid var(--tip-border); margin-bottom: 1rem; }
+  .price-card { background: var(--card); border-radius: 20px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+  .price-input-wrap { display: flex; gap: 10px; align-items: center; margin-bottom: 1rem; }
+  .price-input-wrap input[type=number] { flex: 1; padding: 12px 14px; font-size: 15px; border: 2px solid var(--border); border-radius: 14px; background: var(--input-bg); color: var(--text); }
+  .price-input-wrap input[type=number]:focus { outline: none; border-color: #667eea; }
+  .price-result { display: none; text-align: center; padding: 14px; border-radius: 14px; font-size: 16px; font-weight: 700; margin-bottom: 1rem; }
+  .price-result.good { background: #d4edda; color: #155724; }
+  .price-result.ok { background: #fff3cd; color: #856404; }
+  .price-result.bad { background: #f8d7da; color: #721c24; }
+  .price-btn { width: 100%; padding: 14px; border-radius: 14px; border: none; background: linear-gradient(135deg, #667eea, #764ba2); color: white; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 10px; }
+  .whatsapp-btn { width: 100%; padding: 14px; border-radius: 14px; border: none; background: linear-gradient(135deg, #25D366, #128C7E); color: white; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
 </style>
 </head>
 <body>
@@ -43,6 +79,7 @@
     <div class="logo">🎮</div>
     <h1>Chercheur de prix</h1>
     <p class="sub">Jeux vidéos & brocante</p>
+    <button class="dark-toggle" onclick="toggleDark()" id="darkBtn">🌙</button>
   </div>
 
   <div class="card">
@@ -55,30 +92,40 @@
     <div class="divider">— CHERCHER SUR —</div>
     <div class="sites">
       <button class="btn vinted" onclick="go('vinted')">
-        <div>
-          <div class="btn-label">Vinted</div>
-          <div class="btn-sub">Prix entre particuliers</div>
-        </div>
+        <div><div class="btn-label">Vinted</div><div class="btn-sub">Prix entre particuliers</div></div>
         <span class="arrow">→</span>
       </button>
       <button class="btn lbc" onclick="go('lbc')">
-        <div>
-          <div class="btn-label">Leboncoin</div>
-          <div class="btn-sub">Annonces locales</div>
-        </div>
+        <div><div class="btn-label">Leboncoin</div><div class="btn-sub">Annonces locales</div></div>
         <span class="arrow">→</span>
       </button>
-      <button class="btn both" onclick="go('both')">
-        <div>
-          <div class="btn-label">Les deux en même temps</div>
-          <div class="btn-sub">Vinted + Leboncoin</div>
-        </div>
+      <button class="btn ebay" onclick="go('ebay')">
+        <div><div class="btn-label">eBay</div><div class="btn-sub">Marché international</div></div>
+        <span class="arrow">→</span>
+      </button>
+      <button class="btn fb" onclick="go('fb')">
+        <div><div class="btn-label">Facebook Marketplace</div><div class="btn-sub">Près de chez toi</div></div>
+        <span class="arrow">→</span>
+      </button>
+      <button class="btn both" onclick="go('all')">
+        <div><div class="btn-label">Tout ouvrir en même temps</div><div class="btn-sub">Vinted + LBC + eBay + FB</div></div>
         <span class="arrow">⚡</span>
       </button>
     </div>
   </div>
 
-  <div class="tip">💡 <strong>Astuce :</strong> Tape le nom du jeu, sélectionne une suggestion et recherche sur Vinted ou Leboncoin !</div>
+  <div class="price-card">
+    <div class="card-title">💰 C'est une bonne affaire ?</div>
+    <div class="price-input-wrap">
+      <input type="number" id="price" placeholder="Prix demandé (€)" />
+      <input type="number" id="market" placeholder="Prix marché (€)" />
+    </div>
+    <button class="price-btn" onclick="checkPrice()">Analyser le prix</button>
+    <div class="price-result" id="price-result"></div>
+    <button class="whatsapp-btn" onclick="shareWhatsApp()">📲 Partager sur WhatsApp</button>
+  </div>
+
+  <div class="tip">💡 <strong>Astuce :</strong> Tape le nom du jeu, recherche sur plusieurs sites pour comparer les prix !</div>
 </div>
 
 <script>
@@ -102,9 +149,13 @@ var predefined = [
   "Halo Xbox","Halo 2 Xbox","Halo 3 Xbox 360",
   "Manette Nintendo NES","Manette Super Nintendo","Manette N64","Manette GameCube",
   "Manette PS1","Manette PS2","Manette Xbox 360","Manette Switch Pro",
-  "Cartouche NES","Cartouche SNES","Cartouche Game Boy","Cartouche N64",
-  "Console Game Boy","Console Game Boy Advance SP"
+  "Cartouche NES","Cartouche SNES","Cartouche Game Boy","Cartouche N64"
 ];
+
+function toggleDark() {
+  document.body.classList.toggle('dark');
+  document.getElementById('darkBtn').textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
+}
 
 function getHistory() {
   try { return JSON.parse(localStorage.getItem('jv_history') || '[]'); } catch(e) { return []; }
@@ -125,12 +176,12 @@ function showSuggestions() {
     if (history.length > 0) {
       html += '<div class="history-label">🕐 Recherches récentes</div>';
       history.slice(0, 4).forEach(function(h) {
-        html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + h.replace(/'/g,"\\'") + '\')"><span class="suggestion-icon">🕐</span>' + h + '</div>';
+        html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + h.replace(/'/g,"\\'") + '\')"><span>🕐</span>' + h + '</div>';
       });
     }
     html += '<div class="history-label">🎮 Populaires</div>';
     predefined.slice(0, 6).forEach(function(p) {
-      html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + p.replace(/'/g,"\\'") + '\')"><span class="suggestion-icon">🎮</span>' + p + '</div>';
+      html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + p.replace(/'/g,"\\'") + '\')"><span>🎮</span>' + p + '</div>';
     });
   } else {
     var filtered = predefined.filter(function(p){ return p.toLowerCase().indexOf(q) > -1; });
@@ -138,14 +189,12 @@ function showSuggestions() {
     if (hFiltered.length > 0) {
       html += '<div class="history-label">🕐 Récents</div>';
       hFiltered.slice(0,3).forEach(function(h) {
-        html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + h.replace(/'/g,"\\'") + '\')"><span class="suggestion-icon">🕐</span>' + h + '</div>';
+        html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + h.replace(/'/g,"\\'") + '\')"><span>🕐</span>' + h + '</div>';
       });
     }
-    if (filtered.length > 0) {
-      filtered.slice(0, 8).forEach(function(p) {
-        html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + p.replace(/'/g,"\\'") + '\')"><span class="suggestion-icon">🎮</span>' + p + '</div>';
-      });
-    }
+    filtered.slice(0, 8).forEach(function(p) {
+      html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + p.replace(/'/g,"\\'") + '\')"><span>🎮</span>' + p + '</div>';
+    });
   }
   if (html === '') { box.style.display = 'none'; return; }
   box.innerHTML = html;
@@ -165,8 +214,34 @@ function go(site) {
   if (!q) { alert("Entre un nom de jeu d'abord !"); return; }
   saveHistory(q);
   document.getElementById('suggestions').style.display = 'none';
-  if (site === 'vinted' || site === 'both') window.open('https://www.vinted.fr/catalog?search_text=' + encodeURIComponent(q), '_blank');
-  if (site === 'lbc' || site === 'both') setTimeout(function(){ window.open('https://www.leboncoin.fr/recherche?text=' + encodeURIComponent(q), '_blank'); }, 400);
+  if (site === 'vinted' || site === 'all') window.open('https://www.vinted.fr/catalog?search_text=' + encodeURIComponent(q), '_blank');
+  if (site === 'lbc' || site === 'all') setTimeout(function(){ window.open('https://www.leboncoin.fr/recherche?text=' + encodeURIComponent(q), '_blank'); }, 400);
+  if (site === 'ebay' || site === 'all') setTimeout(function(){ window.open('https://www.ebay.fr/sch/i.html?_nkw=' + encodeURIComponent(q), '_blank'); }, 800);
+  if (site === 'fb' || site === 'all') setTimeout(function(){ window.open('https://www.facebook.com/marketplace/search/?query=' + encodeURIComponent(q), '_blank'); }, 1200);
+}
+function checkPrice() {
+  var price = parseFloat(document.getElementById('price').value);
+  var market = parseFloat(document.getElementById('market').value);
+  var result = document.getElementById('price-result');
+  if (!price || !market) { alert('Entre les deux prix !'); return; }
+  var diff = ((market - price) / market) * 100;
+  result.style.display = 'block';
+  if (diff >= 30) {
+    result.className = 'price-result good';
+    result.textContent = '✅ Bonne affaire ! ' + Math.round(diff) + '% moins cher que le marché';
+  } else if (diff >= 0) {
+    result.className = 'price-result ok';
+    result.textContent = '⚠️ Prix correct, ' + Math.round(diff) + '% sous le marché';
+  } else {
+    result.className = 'price-result bad';
+    result.textContent = '❌ Trop cher ! ' + Math.round(Math.abs(diff)) + '% au-dessus du marché';
+  }
+}
+function shareWhatsApp() {
+  var q = document.getElementById('q').value.trim();
+  var price = document.getElementById('price').value;
+  var msg = q ? 'Regarde ce que j\'ai trouvé en brocante : ' + q + (price ? ' à ' + price + '€' : '') + ' - Trouvé avec fouzi91.github.io/Fouzi-Bro-Android' : 'Cherche les prix sur fouzi91.github.io/Fouzi-Bro-Android';
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
 }
 </script>
 </body>
