@@ -54,15 +54,13 @@
   .btn:active { transform: scale(0.97); }
   .btn.vinted { background: linear-gradient(135deg, #09B1BA, #06d6a0); }
   .btn.lbc { background: linear-gradient(135deg, #FF6E14, #ff9a44); }
-  .btn.ebay { background: linear-gradient(135deg, #e53238, #f5af02); }
-  .btn.fb { background: linear-gradient(135deg, #1877f2, #42a5f5); }
   .btn.both { background: linear-gradient(135deg, #667eea, #764ba2); }
   .btn-label { font-size: 15px; font-weight: 700; color: white; text-align: left; }
   .btn-sub { font-size: 11px; color: rgba(255,255,255,0.8); margin-top: 2px; }
   .arrow { font-size: 20px; color: rgba(255,255,255,0.7); }
   .tip { background: var(--tip-bg); border-radius: 16px; padding: 14px 16px; font-size: 13px; color: var(--tip-color); line-height: 1.6; border-left: 4px solid var(--tip-border); margin-bottom: 1rem; }
   .price-card { background: var(--card); border-radius: 20px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
-  .price-input-wrap { display: flex; gap: 10px; align-items: center; margin-bottom: 1rem; }
+  .price-input-wrap { display: flex; gap: 10px; margin-bottom: 1rem; }
   .price-input-wrap input[type=number] { flex: 1; padding: 12px 14px; font-size: 15px; border: 2px solid var(--border); border-radius: 14px; background: var(--input-bg); color: var(--text); }
   .price-input-wrap input[type=number]:focus { outline: none; border-color: #667eea; }
   .price-result { display: none; text-align: center; padding: 14px; border-radius: 14px; font-size: 16px; font-weight: 700; margin-bottom: 1rem; }
@@ -99,16 +97,8 @@
         <div><div class="btn-label">Leboncoin</div><div class="btn-sub">Annonces locales</div></div>
         <span class="arrow">→</span>
       </button>
-      <button class="btn ebay" onclick="go('ebay')">
-        <div><div class="btn-label">eBay</div><div class="btn-sub">Marché international</div></div>
-        <span class="arrow">→</span>
-      </button>
-      <button class="btn fb" onclick="go('fb')">
-        <div><div class="btn-label">Facebook Marketplace</div><div class="btn-sub">Près de chez toi</div></div>
-        <span class="arrow">→</span>
-      </button>
-      <button class="btn both" onclick="go('all')">
-        <div><div class="btn-label">Tout ouvrir en même temps</div><div class="btn-sub">Vinted + LBC + eBay + FB</div></div>
+      <button class="btn both" onclick="go('both')">
+        <div><div class="btn-label">Les deux en même temps</div><div class="btn-sub">Vinted + Leboncoin</div></div>
         <span class="arrow">⚡</span>
       </button>
     </div>
@@ -125,7 +115,7 @@
     <button class="whatsapp-btn" onclick="shareWhatsApp()">📲 Partager sur WhatsApp</button>
   </div>
 
-  <div class="tip">💡 <strong>Astuce :</strong> Tape le nom du jeu, recherche sur plusieurs sites pour comparer les prix !</div>
+  <div class="tip">💡 <strong>Astuce :</strong> Tape le nom du jeu, compare les prix et vérifie si c'est une bonne affaire !</div>
 </div>
 
 <script>
@@ -156,7 +146,6 @@ function toggleDark() {
   document.body.classList.toggle('dark');
   document.getElementById('darkBtn').textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
 }
-
 function getHistory() {
   try { return JSON.parse(localStorage.getItem('jv_history') || '[]'); } catch(e) { return []; }
 }
@@ -214,10 +203,8 @@ function go(site) {
   if (!q) { alert("Entre un nom de jeu d'abord !"); return; }
   saveHistory(q);
   document.getElementById('suggestions').style.display = 'none';
-  if (site === 'vinted' || site === 'all') window.open('https://www.vinted.fr/catalog?search_text=' + encodeURIComponent(q), '_blank');
-  if (site === 'lbc' || site === 'all') setTimeout(function(){ window.open('https://www.leboncoin.fr/recherche?text=' + encodeURIComponent(q), '_blank'); }, 400);
-  if (site === 'ebay' || site === 'all') setTimeout(function(){ window.open('https://www.ebay.fr/sch/i.html?_nkw=' + encodeURIComponent(q), '_blank'); }, 800);
-  if (site === 'fb' || site === 'all') setTimeout(function(){ window.open('https://www.facebook.com/marketplace/search/?query=' + encodeURIComponent(q), '_blank'); }, 1200);
+  if (site === 'vinted' || site === 'both') window.open('https://www.vinted.fr/catalog?search_text=' + encodeURIComponent(q), '_blank');
+  if (site === 'lbc' || site === 'both') setTimeout(function(){ window.open('https://www.leboncoin.fr/recherche?text=' + encodeURIComponent(q), '_blank'); }, 400);
 }
 function checkPrice() {
   var price = parseFloat(document.getElementById('price').value);
@@ -240,7 +227,7 @@ function checkPrice() {
 function shareWhatsApp() {
   var q = document.getElementById('q').value.trim();
   var price = document.getElementById('price').value;
-  var msg = q ? 'Regarde ce que j\'ai trouvé en brocante : ' + q + (price ? ' à ' + price + '€' : '') + ' - Trouvé avec fouzi91.github.io/Fouzi-Bro-Android' : 'Cherche les prix sur fouzi91.github.io/Fouzi-Bro-Android';
+  var msg = q ? 'Regarde ce que j\'ai trouvé en brocante : ' + q + (price ? ' à ' + price + '€' : '') + ' - fouzi91.github.io/Fouzi-Bro-Android' : 'Cherche les prix sur fouzi91.github.io/Fouzi-Bro-Android';
   window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
 }
 </script>
