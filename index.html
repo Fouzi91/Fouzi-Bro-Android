@@ -59,14 +59,6 @@
   .price-input { flex: 1; padding: 12px 14px; font-size: 15px; border: 2px solid var(--border); border-radius: 14px; background: var(--input-bg); color: var(--text); }
   .price-input:focus { outline: none; border-color: #667eea; }
   .save-btn { padding: 12px 16px; border-radius: 14px; border: none; background: linear-gradient(135deg, #667eea, #764ba2); color: white; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
-  .history-prices { margin-top: 0; }
-  .price-entry { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
-  .price-entry:last-child { border-bottom: none; }
-  .price-entry-name { flex: 1; font-size: 14px; font-weight: 500; color: var(--text); }
-  .price-entry-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
-  .price-entry-price { color: #667eea; font-weight: 700; font-size: 15px; margin-right: 10px; }
-  .price-entry-delete { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 16px; }
-  .empty-msg { font-size: 13px; color: var(--text2); text-align: center; padding: 1rem 0; }
 </style>
 </head>
 <body>
@@ -104,11 +96,6 @@
       <input type="number" class="price-input" id="found-price" placeholder="Prix trouvé (€)" />
       <button class="save-btn" onclick="savePrice()">💾 Sauvegarder</button>
     </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">📋 Mes prix trouvés</div>
-    <div class="history-prices" id="price-history"></div>
   </div>
 </div>
 
@@ -244,30 +231,8 @@ function savePrice() {
   prices.unshift({ name: q, price: parseFloat(price), date: new Date().toLocaleDateString('fr-FR') });
   localStorage.setItem('jv_prices', JSON.stringify(prices.slice(0, 50)));
   document.getElementById('found-price').value = '';
-  renderPrices();
+  alert('✅ Prix sauvegardé !');
 }
-function deletePrice(index) {
-  var prices = getPrices();
-  prices.splice(index, 1);
-  localStorage.setItem('jv_prices', JSON.stringify(prices));
-  renderPrices();
-}
-function renderPrices() {
-  var prices = getPrices();
-  var box = document.getElementById('price-history');
-  if (prices.length === 0) {
-    box.innerHTML = '<div class="empty-msg">Aucun prix sauvegardé</div>';
-    return;
-  }
-  box.innerHTML = prices.map(function(p, i) {
-    return '<div class="price-entry">' +
-      '<div><div class="price-entry-name">' + p.name + '</div><div class="price-entry-meta">' + p.date + '</div></div>' +
-      '<span class="price-entry-price">' + p.price + '€</span>' +
-      '<button class="price-entry-delete" onclick="deletePrice(' + i + ')">🗑️</button>' +
-    '</div>';
-  }).join('');
-}
-renderPrices();
 </script>
 </body>
 </html>
