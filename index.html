@@ -41,6 +41,9 @@
   .suggestion-item { padding: 12px 16px; font-size: 14px; color: var(--text); cursor: pointer; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
   .suggestion-item:last-child { border-bottom: none; }
   .suggestion-item:hover { background: var(--suggestion-hover); }
+  .suggestion-name { flex: 1; }
+  .suggestion-price { font-size: 11px; color: #667eea; font-weight: 600; white-space: nowrap; }
+  .suggestion-date { font-size: 10px; color: var(--text2); }
   .history-label { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; padding: 10px 16px 4px; }
   .divider { text-align: center; font-size: 12px; color: var(--text2); margin: 1rem 0; font-weight: 600; letter-spacing: 1px; }
   .sites { display: flex; flex-direction: column; gap: 10px; }
@@ -56,11 +59,12 @@
   .price-input { flex: 1; padding: 12px 14px; font-size: 15px; border: 2px solid var(--border); border-radius: 14px; background: var(--input-bg); color: var(--text); }
   .price-input:focus { outline: none; border-color: #667eea; }
   .save-btn { padding: 12px 16px; border-radius: 14px; border: none; background: linear-gradient(135deg, #667eea, #764ba2); color: white; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
-  .history-prices { margin-top: 1rem; }
-  .price-entry { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text); }
+  .history-prices { margin-top: 0; }
+  .price-entry { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
   .price-entry:last-child { border-bottom: none; }
-  .price-entry-name { flex: 1; font-weight: 500; }
-  .price-entry-price { color: #667eea; font-weight: 700; margin-right: 10px; }
+  .price-entry-name { flex: 1; font-size: 14px; font-weight: 500; color: var(--text); }
+  .price-entry-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .price-entry-price { color: #667eea; font-weight: 700; font-size: 15px; margin-right: 10px; }
   .price-entry-delete { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 16px; }
   .empty-msg { font-size: 13px; color: var(--text2); text-align: center; padding: 1rem 0; }
 </style>
@@ -118,14 +122,12 @@ var predefined = [
   "Suikoden PS1","Suikoden II PS1","Castlevania Symphony of the Night PS1",
   "Metal Gear Solid PS1","Resident Evil PS1","Resident Evil 2 PS1","Resident Evil 3 Nemesis PS1",
   "Silent Hill PS1","Crash Bandicoot PS1","Crash Bandicoot 2 PS1","Crash Bandicoot 3 Warped PS1",
-  "Spyro the Dragon PS1","Spyro 2 PS1","Spyro Year of the Dragon PS1",
-  "Tekken PS1","Tekken 2 PS1","Tekken 3 PS1","Street Fighter Alpha 3 PS1",
-  "Gran Turismo PS1","Gran Turismo 2 PS1","Tomb Raider PS1","Tomb Raider II PS1",
+  "Spyro the Dragon PS1","Tekken PS1","Tekken 2 PS1","Tekken 3 PS1",
+  "Gran Turismo PS1","Gran Turismo 2 PS1","Tomb Raider PS1",
   "GTA San Andreas PS2","GTA Vice City PS2","God of War PS2","God of War II PS2",
   "Shadow of the Colossus PS2","Kingdom Hearts PS2","Kingdom Hearts II PS2",
   "Final Fantasy X PS2","Final Fantasy XII PS2","Persona 3 PS2","Persona 4 PS2",
-  "Devil May Cry PS2","Devil May Cry 3 PS2","Resident Evil 4 PS2",
-  "Metal Gear Solid 2 PS2","Metal Gear Solid 3 PS2","Okami PS2",
+  "Devil May Cry PS2","Resident Evil 4 PS2","Metal Gear Solid 2 PS2","Metal Gear Solid 3 PS2",
   "The Last of Us PS3","God of War III PS3","GTA V PS3","Red Dead Redemption PS3",
   "Dark Souls PS3","Batman Arkham City PS3","Persona 5 PS3",
   "God of War PS4","The Last of Us Part II PS4","Spider-Man PS4","Elden Ring PS4",
@@ -133,12 +135,11 @@ var predefined = [
   "Spider-Man 2 PS5","God of War Ragnarok PS5","Elden Ring PS5","Astro Bot PS5",
   "Final Fantasy VII Rebirth PS5","Baldur's Gate 3 PS5","Gran Turismo 7 PS5",
   "Mario Kart 8 Deluxe Switch","Zelda Breath of the Wild Switch","Zelda Tears of the Kingdom Switch",
-  "Super Mario Odyssey Switch","Animal Crossing New Horizons Switch",
-  "Super Smash Bros Ultimate Switch","Pokemon Ecarlate Switch",
+  "Super Mario Odyssey Switch","Animal Crossing New Horizons Switch","Super Smash Bros Ultimate Switch",
   "Super Mario Sunshine GameCube","Zelda Wind Waker GameCube","Metroid Prime GameCube",
-  "Super Mario World SNES","Chrono Trigger SNES","Secret of Mana SNES","Zelda A Link to the Past SNES",
-  "Sonic the Hedgehog Mega Drive","Streets of Rage 2 Mega Drive","Golden Axe Mega Drive",
-  "Tetris Game Boy","Pokemon Rouge Game Boy","Pokemon Bleu Game Boy","Zelda Link's Awakening Game Boy",
+  "Super Mario World SNES","Chrono Trigger SNES","Secret of Mana SNES",
+  "Sonic the Hedgehog Mega Drive","Streets of Rage 2 Mega Drive",
+  "Tetris Game Boy","Pokemon Rouge Game Boy","Pokemon Bleu Game Boy",
   "Pokemon Or GBC","Pokemon Argent GBC","Pokemon Cristal GBC",
   "Pokemon Rubis GBA","Pokemon Emeraude GBA","Golden Sun GBA","Advance Wars GBA",
   "Manette PS4 DualShock","Manette PS5 DualSense","Manette Switch Pro","Manette GameCube"
@@ -158,33 +159,59 @@ function saveHistory(q) {
     localStorage.setItem('jv_history', JSON.stringify(h.slice(0, 8)));
   } catch(e) {}
 }
+function getPrices() {
+  try { return JSON.parse(localStorage.getItem('jv_prices') || '[]'); } catch(e) { return []; }
+}
 function showSuggestions() {
   var q = document.getElementById('q').value.trim().toLowerCase();
   var box = document.getElementById('suggestions');
   var html = '';
   var history = getHistory();
+  var prices = getPrices();
+
   if (q === '') {
+    if (prices.length > 0) {
+      html += '<div class="history-label">💰 Mes prix sauvegardés</div>';
+      prices.slice(0, 4).forEach(function(p) {
+        html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + p.name.replace(/'/g,"\\'") + '\')">' +
+          '<span>💰</span>' +
+          '<div class="suggestion-name">' + p.name + '<div class="suggestion-date">' + p.date + '</div></div>' +
+          '<span class="suggestion-price">' + p.price + '€</span>' +
+          '</div>';
+      });
+    }
     if (history.length > 0) {
       html += '<div class="history-label">🕐 Recherches récentes</div>';
-      history.slice(0, 4).forEach(function(h) {
-        html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + h.replace(/'/g,"\\'") + '\')"><span>🕐</span>' + h + '</div>';
+      history.slice(0, 3).forEach(function(h) {
+        html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + h.replace(/'/g,"\\'") + '\')"><span>🕐</span><div class="suggestion-name">' + h + '</div></div>';
       });
     }
     html += '<div class="history-label">🎮 Populaires</div>';
-    predefined.slice(0, 6).forEach(function(p) {
-      html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + p.replace(/'/g,"\\'") + '\')"><span>🎮</span>' + p + '</div>';
+    predefined.slice(0, 5).forEach(function(p) {
+      html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + p.replace(/'/g,"\\'") + '\')"><span>🎮</span><div class="suggestion-name">' + p + '</div></div>';
     });
   } else {
+    var pFiltered = prices.filter(function(p){ return p.name.toLowerCase().indexOf(q) > -1; });
+    if (pFiltered.length > 0) {
+      html += '<div class="history-label">💰 Mes prix</div>';
+      pFiltered.slice(0, 3).forEach(function(p) {
+        html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + p.name.replace(/'/g,"\\'") + '\')">' +
+          '<span>💰</span>' +
+          '<div class="suggestion-name">' + p.name + '<div class="suggestion-date">' + p.date + '</div></div>' +
+          '<span class="suggestion-price">' + p.price + '€</span>' +
+          '</div>';
+      });
+    }
     var filtered = predefined.filter(function(p){ return p.toLowerCase().indexOf(q) > -1; });
     var hFiltered = history.filter(function(h){ return h.toLowerCase().indexOf(q) > -1; });
     if (hFiltered.length > 0) {
       html += '<div class="history-label">🕐 Récents</div>';
       hFiltered.slice(0,3).forEach(function(h) {
-        html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + h.replace(/'/g,"\\'") + '\')"><span>🕐</span>' + h + '</div>';
+        html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + h.replace(/'/g,"\\'") + '\')"><span>🕐</span><div class="suggestion-name">' + h + '</div></div>';
       });
     }
-    filtered.slice(0, 8).forEach(function(p) {
-      html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + p.replace(/'/g,"\\'") + '\')"><span>🎮</span>' + p + '</div>';
+    filtered.slice(0, 6).forEach(function(p) {
+      html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + p.replace(/'/g,"\\'") + '\')"><span>🎮</span><div class="suggestion-name">' + p + '</div></div>';
     });
   }
   if (html === '') { box.style.display = 'none'; return; }
@@ -207,9 +234,6 @@ function go(site) {
   document.getElementById('suggestions').style.display = 'none';
   if (site === 'vinted' || site === 'both') window.open('https://www.vinted.fr/catalog?search_text=' + encodeURIComponent(q), '_blank');
   if (site === 'lbc' || site === 'both') setTimeout(function(){ window.open('https://www.leboncoin.fr/recherche?text=' + encodeURIComponent(q), '_blank'); }, 400);
-}
-function getPrices() {
-  try { return JSON.parse(localStorage.getItem('jv_prices') || '[]'); } catch(e) { return []; }
 }
 function savePrice() {
   var q = document.getElementById('q').value.trim();
@@ -237,7 +261,7 @@ function renderPrices() {
   }
   box.innerHTML = prices.map(function(p, i) {
     return '<div class="price-entry">' +
-      '<div class="price-entry-name">' + p.name + '<br><small style="color:var(--text2);font-size:11px">' + p.date + '</small></div>' +
+      '<div><div class="price-entry-name">' + p.name + '</div><div class="price-entry-meta">' + p.date + '</div></div>' +
       '<span class="price-entry-price">' + p.price + '€</span>' +
       '<button class="price-entry-delete" onclick="deletePrice(' + i + ')">🗑️</button>' +
     '</div>';
