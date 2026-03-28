@@ -59,6 +59,14 @@
   .price-input { flex: 1; padding: 12px 14px; font-size: 15px; border: 2px solid var(--border); border-radius: 14px; background: var(--input-bg); color: var(--text); }
   .price-input:focus { outline: none; border-color: #667eea; }
   .save-btn { padding: 12px 16px; border-radius: 14px; border: none; background: linear-gradient(135deg, #667eea, #764ba2); color: white; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .online-prices { margin-top: 1rem; }
+  .price-entry { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .price-entry:last-child { border-bottom: none; }
+  .price-entry-name { flex: 1; font-size: 14px; font-weight: 500; color: var(--text); }
+  .price-entry-meta { font-size: 11px; color: var(--text2); }
+  .price-entry-price { color: #667eea; font-weight: 700; font-size: 15px; }
+  .empty-msg { font-size: 13px; color: var(--text2); text-align: center; padding: 1rem 0; }
+  .status { font-size: 12px; color: var(--text2); text-align: center; margin-top: 8px; }
 </style>
 </head>
 <body>
@@ -96,34 +104,40 @@
       <input type="number" class="price-input" id="found-price" placeholder="Prix trouvé (€)" />
       <button class="save-btn" onclick="savePrice()">💾 Sauvegarder</button>
     </div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">💰 Prix partagés</div>
+    <div class="online-prices" id="online-prices">
+      <div class="empty-msg">Chargement...</div>
+    </div>
   </div>
 </div>
 
 <script>
+var DB_URL = 'https://fouzi-hichem-default-rtdb.firebaseio.com';
+var onlinePrices = [];
+
 var predefined = [
   "Nintendo NES","Super Nintendo SNES","Mega Drive Sega","Game Boy","Game Boy Color","Game Boy Advance",
-  "Nintendo 64","GameCube","Nintendo DS","Nintendo DSi","Nintendo 3DS","Nintendo Switch",
+  "Nintendo 64","GameCube","Nintendo DS","Nintendo 3DS","Nintendo Switch",
   "PlayStation 1 PS1","PlayStation 2 PS2","PlayStation 3 PS3","PlayStation 4 PS4","PlayStation 5 PS5","PSP","PS Vita",
-  "Xbox","Xbox 360","Xbox One","Xbox Series X","Xbox Series S",
-  "Final Fantasy VII PS1","Final Fantasy VIII PS1","Final Fantasy IX PS1","Chrono Cross PS1","Xenogears PS1",
-  "Suikoden PS1","Suikoden II PS1","Castlevania Symphony of the Night PS1",
-  "Metal Gear Solid PS1","Resident Evil PS1","Resident Evil 2 PS1","Resident Evil 3 Nemesis PS1",
-  "Silent Hill PS1","Crash Bandicoot PS1","Crash Bandicoot 2 PS1","Crash Bandicoot 3 Warped PS1",
+  "Xbox","Xbox 360","Xbox One","Xbox Series X",
+  "Final Fantasy VII PS1","Final Fantasy VIII PS1","Final Fantasy IX PS1","Chrono Cross PS1",
+  "Metal Gear Solid PS1","Resident Evil PS1","Resident Evil 2 PS1","Silent Hill PS1",
+  "Crash Bandicoot PS1","Crash Bandicoot 2 PS1","Crash Bandicoot 3 Warped PS1",
   "Spyro the Dragon PS1","Tekken PS1","Tekken 2 PS1","Tekken 3 PS1",
-  "Gran Turismo PS1","Gran Turismo 2 PS1","Tomb Raider PS1",
-  "GTA San Andreas PS2","GTA Vice City PS2","God of War PS2","God of War II PS2",
-  "Shadow of the Colossus PS2","Kingdom Hearts PS2","Kingdom Hearts II PS2",
-  "Final Fantasy X PS2","Final Fantasy XII PS2","Persona 3 PS2","Persona 4 PS2",
-  "Devil May Cry PS2","Resident Evil 4 PS2","Metal Gear Solid 2 PS2","Metal Gear Solid 3 PS2",
-  "The Last of Us PS3","God of War III PS3","GTA V PS3","Red Dead Redemption PS3",
-  "Dark Souls PS3","Batman Arkham City PS3","Persona 5 PS3",
-  "God of War PS4","The Last of Us Part II PS4","Spider-Man PS4","Elden Ring PS4",
-  "Ghost of Tsushima PS4","Bloodborne PS4","Red Dead Redemption 2 PS4",
+  "Gran Turismo PS1","Gran Turismo 2 PS1",
+  "GTA San Andreas PS2","GTA Vice City PS2","God of War PS2","Shadow of the Colossus PS2",
+  "Kingdom Hearts PS2","Kingdom Hearts II PS2","Final Fantasy X PS2","Persona 4 PS2",
+  "Devil May Cry PS2","Resident Evil 4 PS2","Metal Gear Solid 3 PS2",
+  "The Last of Us PS3","God of War III PS3","GTA V PS3","Dark Souls PS3",
+  "God of War PS4","Spider-Man PS4","Elden Ring PS4","Bloodborne PS4","Red Dead Redemption 2 PS4",
   "Spider-Man 2 PS5","God of War Ragnarok PS5","Elden Ring PS5","Astro Bot PS5",
-  "Final Fantasy VII Rebirth PS5","Baldur's Gate 3 PS5","Gran Turismo 7 PS5",
   "Mario Kart 8 Deluxe Switch","Zelda Breath of the Wild Switch","Zelda Tears of the Kingdom Switch",
   "Super Mario Odyssey Switch","Animal Crossing New Horizons Switch","Super Smash Bros Ultimate Switch",
-  "Super Mario Sunshine GameCube","Zelda Wind Waker GameCube","Metroid Prime GameCube",
+  "Super Mario Sunshine GameCube","Metroid Prime GameCube",
   "Super Mario World SNES","Chrono Trigger SNES","Secret of Mana SNES",
   "Sonic the Hedgehog Mega Drive","Streets of Rage 2 Mega Drive",
   "Tetris Game Boy","Pokemon Rouge Game Boy","Pokemon Bleu Game Boy",
@@ -146,20 +160,16 @@ function saveHistory(q) {
     localStorage.setItem('jv_history', JSON.stringify(h.slice(0, 8)));
   } catch(e) {}
 }
-function getPrices() {
-  try { return JSON.parse(localStorage.getItem('jv_prices') || '[]'); } catch(e) { return []; }
-}
 function showSuggestions() {
   var q = document.getElementById('q').value.trim().toLowerCase();
   var box = document.getElementById('suggestions');
   var html = '';
   var history = getHistory();
-  var prices = getPrices();
 
   if (q === '') {
-    if (prices.length > 0) {
-      html += '<div class="history-label">💰 Mes prix sauvegardés</div>';
-      prices.slice(0, 4).forEach(function(p) {
+    if (onlinePrices.length > 0) {
+      html += '<div class="history-label">💰 Prix partagés</div>';
+      onlinePrices.slice(0, 4).forEach(function(p) {
         html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + p.name.replace(/'/g,"\\'") + '\')">' +
           '<span>💰</span>' +
           '<div class="suggestion-name">' + p.name + '<div class="suggestion-date">' + p.date + '</div></div>' +
@@ -168,7 +178,7 @@ function showSuggestions() {
       });
     }
     if (history.length > 0) {
-      html += '<div class="history-label">🕐 Recherches récentes</div>';
+      html += '<div class="history-label">🕐 Récents</div>';
       history.slice(0, 3).forEach(function(h) {
         html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + h.replace(/'/g,"\\'") + '\')"><span>🕐</span><div class="suggestion-name">' + h + '</div></div>';
       });
@@ -178,9 +188,9 @@ function showSuggestions() {
       html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + p.replace(/'/g,"\\'") + '\')"><span>🎮</span><div class="suggestion-name">' + p + '</div></div>';
     });
   } else {
-    var pFiltered = prices.filter(function(p){ return p.name.toLowerCase().indexOf(q) > -1; });
+    var pFiltered = onlinePrices.filter(function(p){ return p.name.toLowerCase().indexOf(q) > -1; });
     if (pFiltered.length > 0) {
-      html += '<div class="history-label">💰 Mes prix</div>';
+      html += '<div class="history-label">💰 Prix partagés</div>';
       pFiltered.slice(0, 3).forEach(function(p) {
         html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + p.name.replace(/'/g,"\\'") + '\')">' +
           '<span>💰</span>' +
@@ -227,12 +237,41 @@ function savePrice() {
   var price = document.getElementById('found-price').value.trim();
   if (!q) { alert("Entre un nom de jeu d'abord !"); return; }
   if (!price) { alert("Entre un prix !"); return; }
-  var prices = getPrices();
-  prices.unshift({ name: q, price: parseFloat(price), date: new Date().toLocaleDateString('fr-FR') });
-  localStorage.setItem('jv_prices', JSON.stringify(prices.slice(0, 50)));
-  document.getElementById('found-price').value = '';
-  alert('✅ Prix sauvegardé !');
+  var status = document.getElementById('status');
+  status.textContent = 'Sauvegarde en cours...';
+  var data = { name: q, price: parseFloat(price), date: new Date().toLocaleDateString('fr-FR') };
+  fetch(DB_URL + '/prices.json', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  }).then(function() {
+    document.getElementById('found-price').value = '';
+    status.textContent = '✅ Prix sauvegardé !';
+    setTimeout(function(){ status.textContent = ''; }, 2000);
+    loadPrices();
+  }).catch(function() {
+    status.textContent = '❌ Erreur de connexion';
+  });
 }
+function loadPrices() {
+  fetch(DB_URL + '/prices.json')
+    .then(function(r){ return r.json(); })
+    .then(function(data) {
+      var box = document.getElementById('online-prices');
+      if (!data) { box.innerHTML = '<div class="empty-msg">Aucun prix partagé</div>'; return; }
+      onlinePrices = [];
+      Object.values(data).forEach(function(p) { onlinePrices.push(p); });
+      onlinePrices.sort(function(a,b){ return b.date > a.date ? 1 : -1; });
+      box.innerHTML = onlinePrices.slice(0, 20).map(function(p) {
+        return '<div class="price-entry">' +
+          '<div><div class="price-entry-name">' + p.name + '</div><div class="price-entry-meta">' + p.date + '</div></div>' +
+          '<span class="price-entry-price">' + p.price + '€</span>' +
+        '</div>';
+      }).join('');
+    }).catch(function() {
+      document.getElementById('online-prices').innerHTML = '<div class="empty-msg">Erreur de chargement</div>';
+    });
+}
+loadPrices();
 </script>
 </body>
 </html>
