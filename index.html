@@ -33,6 +33,10 @@
   .dark-toggle { position: absolute; top: 0; right: 0; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 18px; cursor: pointer; color: white; }
   .card { background: var(--card); border-radius: 20px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
   .card-title { font-size: 12px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1rem; }
+  .categories { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
+  .cat-btn { padding: 6px 12px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--input-bg); color: var(--text2); font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .cat-btn:hover { border-color: #667eea; color: #667eea; }
+  .cat-btn.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-color: transparent; }
   .search-wrap { position: relative; }
   input[type=text] { width: 100%; padding: 14px 14px 14px 44px; font-size: 15px; border: 2px solid var(--border); border-radius: 14px; background: var(--input-bg); color: var(--text); transition: border 0.2s; }
   input[type=text]:focus { outline: none; border-color: #667eea; background: var(--card); }
@@ -80,6 +84,26 @@
   </div>
 
   <div class="card">
+    <div class="card-title">Catégories</div>
+    <div class="categories" id="categories">
+      <button class="cat-btn active" onclick="setCategory('tous')">Tous</button>
+      <button class="cat-btn" onclick="setCategory('switch')">Switch</button>
+      <button class="cat-btn" onclick="setCategory('ps5')">PS5</button>
+      <button class="cat-btn" onclick="setCategory('ps4')">PS4</button>
+      <button class="cat-btn" onclick="setCategory('ps3')">PS3</button>
+      <button class="cat-btn" onclick="setCategory('ps2')">PS2</button>
+      <button class="cat-btn" onclick="setCategory('ps1')">PS1</button>
+      <button class="cat-btn" onclick="setCategory('gamecube')">GameCube</button>
+      <button class="cat-btn" onclick="setCategory('gba')">GBA</button>
+      <button class="cat-btn" onclick="setCategory('gbc')">GBC</button>
+      <button class="cat-btn" onclick="setCategory('gameboy')">Game Boy</button>
+      <button class="cat-btn" onclick="setCategory('snes')">SNES</button>
+      <button class="cat-btn" onclick="setCategory('megadrive')">Mega Drive</button>
+      <button class="cat-btn" onclick="setCategory('pokemon')">Pokemon</button>
+    </div>
+  </div>
+
+  <div class="card">
     <div class="card-title">Rechercher les prix</div>
     <div class="search-wrap">
       <span class="search-icon">🎮</span>
@@ -119,6 +143,7 @@
 <script>
 var DB_URL = 'https://fouzi-hichem-default-rtdb.firebaseio.com';
 var onlinePrices = [];
+var currentCategory = 'tous';
 
 function getIcon(name) {
   var n = name.toLowerCase();
@@ -143,38 +168,182 @@ function getIcon(name) {
   if (n.includes('xbox series')) return '<img class="con-icon" src="' + base + 'xbox-series-x.png">';
   if (n.includes('xbox 360')) return '<img class="con-icon" src="' + base + 'xbox-360.png">';
   if (n.includes('xbox')) return '<img class="con-icon" src="' + base + 'xbox.png">';
+  if (n.includes('pokemon')) return '🔴';
   if (n.includes('manette') || n.includes('cartouche') || n.includes('console')) return '🕹️';
   return '🎮';
 }
 
-var predefined = [
-  "Nintendo NES","Super Nintendo SNES","Mega Drive Sega","Game Boy","Game Boy Color","Game Boy Advance",
-  "Nintendo 64","GameCube","Nintendo DS","Nintendo DSi","Nintendo 3DS","Nintendo Switch",
-  "PlayStation 1 PS1","PlayStation 2 PS2","PlayStation 3 PS3","PlayStation 4 PS4","PlayStation 5 PS5","PSP","PS Vita",
-  "Xbox","Xbox 360","Xbox One","Xbox Series X","Xbox Series S",
-  "Final Fantasy VII PS1","Final Fantasy VIII PS1","Final Fantasy IX PS1","Chrono Cross PS1","Xenogears PS1",
-  "Suikoden PS1","Suikoden II PS1","Castlevania Symphony of the Night PS1",
-  "Metal Gear Solid PS1","Resident Evil PS1","Resident Evil 2 PS1","Resident Evil 3 Nemesis PS1",
-  "Silent Hill PS1","Crash Bandicoot PS1","Crash Bandicoot 2 PS1","Crash Bandicoot 3 Warped PS1",
-  "Spyro the Dragon PS1","Tekken PS1","Tekken 2 PS1","Tekken 3 PS1",
-  "Gran Turismo PS1","Gran Turismo 2 PS1","Tomb Raider PS1",
-  "GTA San Andreas PS2","GTA Vice City PS2","God of War PS2","Shadow of the Colossus PS2",
-  "Kingdom Hearts PS2","Kingdom Hearts II PS2","Final Fantasy X PS2","Persona 4 PS2",
-  "Devil May Cry PS2","Resident Evil 4 PS2","Metal Gear Solid 3 PS2","Okami PS2",
-  "The Last of Us PS3","God of War III PS3","GTA V PS3","Dark Souls PS3","Persona 5 PS3",
-  "God of War PS4","Spider-Man PS4","Elden Ring PS4","Bloodborne PS4","Red Dead Redemption 2 PS4",
-  "Spider-Man 2 PS5","God of War Ragnarok PS5","Elden Ring PS5","Astro Bot PS5","Baldur's Gate 3 PS5",
-  "Mario Kart 8 Deluxe Switch","Zelda Breath of the Wild Switch","Zelda Tears of the Kingdom Switch",
-  "Super Mario Odyssey Switch","Animal Crossing New Horizons Switch","Super Smash Bros Ultimate Switch",
-  "Pokemon Ecarlate Switch","Pokemon Violet Switch","Splatoon 3 Switch","Metroid Dread Switch",
-  "Super Mario Sunshine GameCube","Zelda Wind Waker GameCube","Metroid Prime GameCube",
-  "Super Mario World SNES","Chrono Trigger SNES","Secret of Mana SNES","Donkey Kong Country SNES",
-  "Sonic the Hedgehog Mega Drive","Streets of Rage 2 Mega Drive","Golden Axe Mega Drive",
-  "Tetris Game Boy","Pokemon Rouge Game Boy","Pokemon Bleu Game Boy","Kirby's Dream Land Game Boy",
-  "Pokemon Or GBC","Pokemon Argent GBC","Pokemon Cristal GBC","Shantae GBC",
-  "Pokemon Rubis GBA","Pokemon Emeraude GBA","Golden Sun GBA","Advance Wars GBA","Metroid Fusion GBA",
-  "Manette PS4 DualShock","Manette PS5 DualSense","Manette Switch Pro","Manette GameCube"
-];
+var allGames = {
+  pokemon: [
+    "Pokemon Rouge Game Boy","Pokemon Bleu Game Boy","Pokemon Jaune Game Boy",
+    "Pokemon Or Game Boy Color","Pokemon Argent Game Boy Color","Pokemon Cristal Game Boy Color",
+    "Pokemon Rubis GBA","Pokemon Saphir GBA","Pokemon Emeraude GBA","Pokemon Rouge Feu GBA","Pokemon Vert Feuille GBA",
+    "Pokemon Diamant DS","Pokemon Perle DS","Pokemon Platine DS",
+    "Pokemon Or HeartGold DS","Pokemon Argent SoulSilver DS",
+    "Pokemon Noir DS","Pokemon Blanc DS","Pokemon Noir 2 DS","Pokemon Blanc 2 DS",
+    "Pokemon X 3DS","Pokemon Y 3DS","Pokemon Rubis Omega 3DS","Pokemon Saphir Alpha 3DS",
+    "Pokemon Soleil 3DS","Pokemon Lune 3DS","Pokemon Ultra Soleil 3DS","Pokemon Ultra Lune 3DS",
+    "Pokemon Let's Go Pikachu Switch","Pokemon Let's Go Evoli Switch",
+    "Pokemon Epee Switch","Pokemon Bouclier Switch",
+    "Pokemon Diamant Etincelant Switch","Pokemon Perle Scintillante Switch",
+    "Pokemon Legendes Arceus Switch","Pokemon Ecarlate Switch","Pokemon Violet Switch",
+    "New Pokemon Snap Switch","Pokken Tournament DX Switch","Pokemon Unite Switch",
+    "Pokemon Snap N64","Pokemon Stadium N64","Pokemon Stadium 2 N64",
+    "Pokemon Colosseum GameCube","Pokemon XD Gale of Darkness GameCube"
+  ],
+  switch: [
+    "Mario Kart 8 Deluxe Switch","Animal Crossing New Horizons Switch","Super Smash Bros Ultimate Switch",
+    "Super Mario Odyssey Switch","Zelda Breath of the Wild Switch","Zelda Tears of the Kingdom Switch",
+    "Super Mario Party Switch","Nintendo Switch Sports","Minecraft Switch","Splatoon 3 Switch",
+    "Kirby and the Forgotten Land Switch","Ring Fit Adventure Switch","Stardew Valley Switch",
+    "Hollow Knight Switch","Hades Switch","Celeste Switch","Super Mario Bros Wonder Switch",
+    "Fire Emblem Three Houses Switch","Xenoblade Chronicles 3 Switch","Metroid Dread Switch",
+    "Pikmin 4 Switch","Luigi Mansion 3 Switch","Monster Hunter Rise Switch",
+    "Persona 5 Royal Switch","The Witcher 3 Switch","Overcooked 2 Switch",
+    "Crash Bandicoot N Sane Trilogy Switch","Sonic Frontiers Switch","Dead Cells Switch",
+    "Cuphead Switch","Among Us Switch","Fortnite Switch","Rocket League Switch",
+    "Bayonetta 3 Switch","Astral Chain Switch","Octopath Traveler II Switch",
+    "Dragon Quest XI S Switch","Mario Golf Super Rush Switch","Mario Tennis Aces Switch",
+    "Pokemon Let's Go Pikachu Switch","Pokemon Let's Go Evoli Switch",
+    "Pokemon Epee Switch","Pokemon Bouclier Switch","Pokemon Legendes Arceus Switch",
+    "Pokemon Ecarlate Switch","Pokemon Violet Switch","New Pokemon Snap Switch",
+    "Pokken Tournament DX Switch","Pokemon Diamant Etincelant Switch","Pokemon Perle Scintillante Switch"
+  ],
+  ps5: [
+    "Demon's Souls PS5","Ratchet and Clank Rift Apart PS5","Returnal PS5",
+    "Astro's Playroom PS5","Astro Bot PS5","Spider-Man 2 PS5",
+    "God of War Ragnarok PS5","The Last of Us Part I PS5","Ghost of Tsushima Director's Cut PS5",
+    "Gran Turismo 7 PS5","Elden Ring PS5","Cyberpunk 2077 PS5","GTA VI PS5",
+    "Assassin's Creed Mirage PS5","Star Wars Jedi Survivor PS5",
+    "Hogwarts Legacy PS5","Baldur's Gate 3 PS5","Final Fantasy XVI PS5",
+    "Final Fantasy VII Rebirth PS5","Persona 3 Reload PS5","Dragon's Dogma 2 PS5",
+    "Monster Hunter Wilds PS5","Resident Evil 4 Remake PS5","Silent Hill 2 Remake PS5",
+    "Alan Wake 2 PS5","Street Fighter 6 PS5","Tekken 8 PS5",
+    "Dragon Ball Sparking Zero PS5","EA Sports FC 25 PS5",
+    "Like a Dragon Infinite Wealth PS5","Lies of P PS5","Diablo IV PS5"
+  ],
+  ps4: [
+    "God of War PS4","God of War Ragnarok PS4","The Last of Us Part I PS4",
+    "The Last of Us Part II PS4","Spider-Man PS4","Spider-Man Miles Morales PS4",
+    "Horizon Zero Dawn PS4","Horizon Forbidden West PS4","Ghost of Tsushima PS4",
+    "Uncharted 4 PS4","Detroit Become Human PS4","Death Stranding PS4",
+    "Bloodborne PS4","Dark Souls III PS4","Sekiro PS4","Elden Ring PS4",
+    "Red Dead Redemption 2 PS4","GTA V PS4","Cyberpunk 2077 PS4",
+    "Assassin's Creed Valhalla PS4","Far Cry 6 PS4","Days Gone PS4",
+    "FIFA PS4","NBA 2K PS4","Mortal Kombat 11 PS4","Tekken 7 PS4",
+    "Monster Hunter World PS4","Final Fantasy VII Remake PS4","Persona 5 Royal PS4",
+    "Yakuza Like a Dragon PS4","Fallout 4 PS4","Resident Evil Village PS4",
+    "It Takes Two PS4","Batman Arkham Knight PS4","Star Wars Jedi Fallen Order PS4"
+  ],
+  ps3: [
+    "Uncharted Drake's Fortune PS3","Uncharted 2 Among Thieves PS3","Uncharted 3 PS3",
+    "The Last of Us PS3","God of War III PS3","Infamous PS3","Infamous 2 PS3",
+    "LittleBigPlanet PS3","LittleBigPlanet 2 PS3","Gran Turismo 5 PS3",
+    "Heavy Rain PS3","Beyond Two Souls PS3","Demon's Souls PS3",
+    "Dark Souls PS3","Batman Arkham Asylum PS3","Batman Arkham City PS3",
+    "Red Dead Redemption PS3","GTA IV PS3","GTA V PS3","Skyrim PS3",
+    "Bioshock PS3","Bioshock Infinite PS3","Borderlands PS3","Borderlands 2 PS3",
+    "Call of Duty 4 Modern Warfare PS3","Call of Duty Black Ops PS3",
+    "Battlefield 3 PS3","Mass Effect 2 PS3","Final Fantasy XIII PS3",
+    "Ni No Kuni PS3","Persona 5 PS3","Yakuza 0 PS3","Metal Gear Solid 4 PS3",
+    "Resident Evil 5 PS3","Dead Space PS3","L.A. Noire PS3"
+  ],
+  ps2: [
+    "GTA San Andreas PS2","GTA Vice City PS2","GTA III PS2",
+    "God of War PS2","God of War II PS2","Shadow of the Colossus PS2","Ico PS2",
+    "Jak and Daxter PS2","Jak II PS2","Jak 3 PS2",
+    "Ratchet and Clank PS2","Ratchet and Clank Going Commando PS2",
+    "Sly Cooper PS2","Sly 2 Band of Thieves PS2","Sly 3 Honor Among Thieves PS2",
+    "Kingdom Hearts PS2","Kingdom Hearts II PS2",
+    "Final Fantasy X PS2","Final Fantasy X-2 PS2","Final Fantasy XII PS2",
+    "Dragon Quest VIII PS2","Persona 3 PS2","Persona 4 PS2",
+    "Okami PS2","Devil May Cry PS2","Devil May Cry 3 PS2","Resident Evil 4 PS2",
+    "Silent Hill 2 PS2","Silent Hill 3 PS2","Metal Gear Solid 2 PS2","Metal Gear Solid 3 PS2",
+    "Burnout 3 Takedown PS2","Need for Speed Underground PS2","Need for Speed Most Wanted PS2",
+    "Guitar Hero PS2","Katamari Damacy PS2","Bully PS2","The Warriors PS2"
+  ],
+  ps1: [
+    "Final Fantasy VII PS1","Final Fantasy VIII PS1","Final Fantasy IX PS1",
+    "Final Fantasy Tactics PS1","Chrono Cross PS1","Xenogears PS1",
+    "Suikoden PS1","Suikoden II PS1","Castlevania Symphony of the Night PS1",
+    "Metal Gear Solid PS1","Resident Evil PS1","Resident Evil 2 PS1","Resident Evil 3 Nemesis PS1",
+    "Silent Hill PS1","Crash Bandicoot PS1","Crash Bandicoot 2 PS1","Crash Bandicoot 3 Warped PS1",
+    "Spyro the Dragon PS1","Tekken PS1","Tekken 2 PS1","Tekken 3 PS1",
+    "Gran Turismo PS1","Gran Turismo 2 PS1","Tomb Raider PS1",
+    "Parasite Eve PS1","Vagrant Story PS1","Legend of Dragoon PS1",
+    "Wild Arms PS1","Grandia PS1","Breath of Fire III PS1","Breath of Fire IV PS1",
+    "Tales of Destiny PS1","Persona PS1","Mega Man X4 PS1","Mega Man X5 PS1",
+    "Dino Crisis PS1","Twisted Metal PS1","Ridge Racer Type 4 PS1",
+    "Wipeout PS1","Ace Combat PS1","Syphon Filter PS1","Medal of Honor PS1"
+  ],
+  gamecube: [
+    "Super Smash Bros Melee GameCube","Zelda Wind Waker GameCube","Zelda Twilight Princess GameCube",
+    "Super Mario Sunshine GameCube","Luigi's Mansion GameCube","Mario Kart Double Dash GameCube",
+    "Mario Party 4 GameCube","Paper Mario Thousand Year Door GameCube",
+    "Metroid Prime GameCube","Metroid Prime 2 Echoes GameCube",
+    "Star Fox Adventures GameCube","F-Zero GX GameCube","Pikmin GameCube","Pikmin 2 GameCube",
+    "Animal Crossing GameCube","Resident Evil 4 GameCube","Tales of Symphonia GameCube",
+    "Soul Calibur II GameCube","Viewtiful Joe GameCube","Killer7 GameCube",
+    "Pokemon Colosseum GameCube","Pokemon XD Gale of Darkness GameCube"
+  ],
+  gba: [
+    "Pokemon Rubis GBA","Pokemon Saphir GBA","Pokemon Emeraude GBA",
+    "Pokemon Rouge Feu GBA","Pokemon Vert Feuille GBA",
+    "Zelda Minish Cap GBA","Super Mario Advance GBA","Super Mario Advance 2 GBA",
+    "Mario Kart Super Circuit GBA","Mario and Luigi Superstar Saga GBA",
+    "Metroid Fusion GBA","Metroid Zero Mission GBA","Fire Emblem GBA",
+    "Golden Sun GBA","Golden Sun Lost Age GBA","Advance Wars GBA","Advance Wars 2 GBA",
+    "Castlevania Circle of the Moon GBA","Castlevania Aria of Sorrow GBA",
+    "Mega Man Zero GBA","Mega Man Battle Network GBA","Sonic Advance GBA",
+    "Final Fantasy Tactics Advance GBA","Kingdom Hearts Chain of Memories GBA","Mother 3 GBA"
+  ],
+  gbc: [
+    "Pokemon Or Game Boy Color","Pokemon Argent Game Boy Color","Pokemon Cristal Game Boy Color",
+    "Zelda Oracle of Ages GBC","Zelda Oracle of Seasons GBC","Zelda Link's Awakening DX GBC",
+    "Super Mario Bros Deluxe GBC","Shantae GBC","Metal Gear Solid GBC","Tetris DX GBC"
+  ],
+  gameboy: [
+    "Tetris Game Boy","Pokemon Rouge Game Boy","Pokemon Bleu Game Boy","Pokemon Jaune Game Boy",
+    "Zelda Link's Awakening Game Boy","Super Mario Land Game Boy","Super Mario Land 2 Game Boy",
+    "Wario Land Game Boy","Kirby's Dream Land Game Boy","Metroid II Game Boy",
+    "DuckTales Game Boy","Contra The Alien Wars Game Boy","Bubble Bobble Game Boy",
+    "Mega Man Dr Wily's Revenge Game Boy","Mega Man II Game Boy"
+  ],
+  snes: [
+    "Super Mario World SNES","Super Mario Kart SNES","Super Mario RPG SNES",
+    "Zelda A Link to the Past SNES","Super Metroid SNES","Kirby Super Star SNES",
+    "Donkey Kong Country SNES","Donkey Kong Country 2 SNES","Star Fox SNES","F-Zero SNES",
+    "Earthbound SNES","Final Fantasy IV SNES","Final Fantasy VI SNES",
+    "Chrono Trigger SNES","Secret of Mana SNES","Mega Man X SNES","Mega Man X2 SNES",
+    "Super Castlevania IV SNES","Street Fighter II SNES","Super Bomberman SNES"
+  ],
+  megadrive: [
+    "Sonic the Hedgehog Mega Drive","Sonic the Hedgehog 2 Mega Drive","Sonic the Hedgehog 3 Mega Drive",
+    "Sonic and Knuckles Mega Drive","Streets of Rage Mega Drive","Streets of Rage 2 Mega Drive",
+    "Golden Axe Mega Drive","Altered Beast Mega Drive","Comix Zone Mega Drive",
+    "Earthworm Jim Mega Drive","Aladdin Mega Drive","The Lion King Mega Drive",
+    "Mortal Kombat Mega Drive","NBA Jam Mega Drive","Gunstar Heroes Mega Drive",
+    "Castlevania Bloodlines Mega Drive","Phantasy Star IV Mega Drive","Shining Force Mega Drive"
+  ]
+};
+
+var predefined = [];
+Object.values(allGames).forEach(function(list) {
+  list.forEach(function(g) { if (predefined.indexOf(g) === -1) predefined.push(g); });
+});
+
+function setCategory(cat) {
+  currentCategory = cat;
+  document.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('active'); });
+  event.target.classList.add('active');
+  document.getElementById('q').value = '';
+  showSuggestions();
+}
+
+function getFilteredGames() {
+  if (currentCategory === 'tous') return predefined;
+  return allGames[currentCategory] || predefined;
+}
 
 function toggleDark() {
   document.body.classList.toggle('dark');
@@ -195,11 +364,12 @@ function showSuggestions() {
   var box = document.getElementById('suggestions');
   var html = '';
   var history = getHistory();
+  var games = getFilteredGames();
 
   if (q === '') {
     if (onlinePrices.length > 0) {
       html += '<div class="history-label">💰 Prix partagés</div>';
-      onlinePrices.slice(0, 4).forEach(function(p) {
+      onlinePrices.slice(0, 3).forEach(function(p) {
         html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + p.name.replace(/'/g,"\\'") + '\')">' +
           getIcon(p.name) +
           '<div class="suggestion-name">' + p.name + '<div class="suggestion-date">' + p.date + '</div></div>' +
@@ -213,8 +383,8 @@ function showSuggestions() {
         html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + h.replace(/'/g,"\\'") + '\')">' + getIcon(h) + '<div class="suggestion-name">' + h + '</div></div>';
       });
     }
-    html += '<div class="history-label">🎮 Populaires</div>';
-    predefined.slice(0, 5).forEach(function(p) {
+    html += '<div class="history-label">🎮 ' + (currentCategory === 'tous' ? 'Populaires' : currentCategory.toUpperCase()) + '</div>';
+    games.slice(0, 8).forEach(function(p) {
       html += '<div class="suggestion-item" onclick="selectSuggestion(\'' + p.replace(/'/g,"\\'") + '\')">' + getIcon(p) + '<div class="suggestion-name">' + p + '</div></div>';
     });
   } else {
@@ -229,7 +399,7 @@ function showSuggestions() {
           '</div>';
       });
     }
-    var filtered = predefined.filter(function(p){ return p.toLowerCase().indexOf(q) > -1; });
+    var filtered = games.filter(function(p){ return p.toLowerCase().indexOf(q) > -1; });
     var hFiltered = history.filter(function(h){ return h.toLowerCase().indexOf(q) > -1; });
     if (hFiltered.length > 0) {
       html += '<div class="history-label">🕐 Récents</div>';
@@ -250,7 +420,7 @@ function selectSuggestion(val) {
   document.getElementById('suggestions').style.display = 'none';
 }
 document.addEventListener('click', function(e) {
-  if (!e.target.closest('.search-wrap') && !e.target.closest('.suggestions')) {
+  if (!e.target.closest('.search-wrap') && !e.target.closest('.suggestions') && !e.target.closest('.categories')) {
     document.getElementById('suggestions').style.display = 'none';
   }
 });
