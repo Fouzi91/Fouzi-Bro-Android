@@ -86,20 +86,19 @@
   <div class="card">
     <div class="card-title">Catégories</div>
     <div class="categories" id="categories">
-      <button class="cat-btn active" onclick="setCategory('tous')">Tous</button>
-      <button class="cat-btn" onclick="setCategory('switch')">Switch</button>
-      <button class="cat-btn" onclick="setCategory('ps5')">PS5</button>
-      <button class="cat-btn" onclick="setCategory('ps4')">PS4</button>
-      <button class="cat-btn" onclick="setCategory('ps3')">PS3</button>
-      <button class="cat-btn" onclick="setCategory('ps2')">PS2</button>
-      <button class="cat-btn" onclick="setCategory('ps1')">PS1</button>
-      <button class="cat-btn" onclick="setCategory('gamecube')">GameCube</button>
-      <button class="cat-btn" onclick="setCategory('gba')">GBA</button>
-      <button class="cat-btn" onclick="setCategory('gbc')">GBC</button>
-      <button class="cat-btn" onclick="setCategory('gameboy')">Game Boy</button>
-      <button class="cat-btn" onclick="setCategory('snes')">SNES</button>
-      <button class="cat-btn" onclick="setCategory('megadrive')">Mega Drive</button>
-      <button class="cat-btn" onclick="setCategory('pokemon')">Pokemon</button>
+      <button class="cat-btn active" onclick="setCategory('tous', this)">Tous</button>
+      <button class="cat-btn" onclick="setCategory('switch', this)">Switch</button>
+      <button class="cat-btn" onclick="setCategory('ps5', this)">PS5</button>
+      <button class="cat-btn" onclick="setCategory('ps4', this)">PS4</button>
+      <button class="cat-btn" onclick="setCategory('ps3', this)">PS3</button>
+      <button class="cat-btn" onclick="setCategory('ps2', this)">PS2</button>
+      <button class="cat-btn" onclick="setCategory('ps1', this)">PS1</button>
+      <button class="cat-btn" onclick="setCategory('gamecube', this)">GameCube</button>
+      <button class="cat-btn" onclick="setCategory('gba', this)">GBA</button>
+      <button class="cat-btn" onclick="setCategory('gbc', this)">GBC</button>
+      <button class="cat-btn" onclick="setCategory('gameboy', this)">Game Boy</button>
+      <button class="cat-btn" onclick="setCategory('snes', this)">SNES</button>
+      <button class="cat-btn" onclick="setCategory('megadrive', this)">Mega Drive</button>
     </div>
   </div>
 
@@ -155,7 +154,6 @@ function getIcon(name) {
   if (n.includes('ps2')) return '<img class="con-icon" src="' + base + 'ps2.png">';
   if (n.includes('ps1') || n.includes('playstation 1')) return '<img class="con-icon" src="' + base + 'ps1.png">';
   if (n.includes('psp')) return '<img class="con-icon" src="' + base + 'psp.png">';
-  if (n.includes('ps vita')) return '<img class="con-icon" src="' + base + 'ps-vita.png">';
   if (n.includes('gba') || n.includes('game boy advance')) return '<img class="con-icon" src="' + base + 'game-boy-advance.png">';
   if (n.includes('gbc') || n.includes('game boy color')) return '<img class="con-icon" src="' + base + 'game-boy-color.png">';
   if (n.includes('game boy')) return '<img class="con-icon" src="' + base + 'game-boy.png">';
@@ -168,29 +166,11 @@ function getIcon(name) {
   if (n.includes('xbox series')) return '<img class="con-icon" src="' + base + 'xbox-series-x.png">';
   if (n.includes('xbox 360')) return '<img class="con-icon" src="' + base + 'xbox-360.png">';
   if (n.includes('xbox')) return '<img class="con-icon" src="' + base + 'xbox.png">';
-  if (n.includes('pokemon')) return '🔴';
   if (n.includes('manette') || n.includes('cartouche') || n.includes('console')) return '🕹️';
   return '🎮';
 }
 
 var allGames = {
-  pokemon: [
-    "Pokemon Rouge Game Boy","Pokemon Bleu Game Boy","Pokemon Jaune Game Boy",
-    "Pokemon Or Game Boy Color","Pokemon Argent Game Boy Color","Pokemon Cristal Game Boy Color",
-    "Pokemon Rubis GBA","Pokemon Saphir GBA","Pokemon Emeraude GBA","Pokemon Rouge Feu GBA","Pokemon Vert Feuille GBA",
-    "Pokemon Diamant DS","Pokemon Perle DS","Pokemon Platine DS",
-    "Pokemon Or HeartGold DS","Pokemon Argent SoulSilver DS",
-    "Pokemon Noir DS","Pokemon Blanc DS","Pokemon Noir 2 DS","Pokemon Blanc 2 DS",
-    "Pokemon X 3DS","Pokemon Y 3DS","Pokemon Rubis Omega 3DS","Pokemon Saphir Alpha 3DS",
-    "Pokemon Soleil 3DS","Pokemon Lune 3DS","Pokemon Ultra Soleil 3DS","Pokemon Ultra Lune 3DS",
-    "Pokemon Let's Go Pikachu Switch","Pokemon Let's Go Evoli Switch",
-    "Pokemon Epee Switch","Pokemon Bouclier Switch",
-    "Pokemon Diamant Etincelant Switch","Pokemon Perle Scintillante Switch",
-    "Pokemon Legendes Arceus Switch","Pokemon Ecarlate Switch","Pokemon Violet Switch",
-    "New Pokemon Snap Switch","Pokken Tournament DX Switch","Pokemon Unite Switch",
-    "Pokemon Snap N64","Pokemon Stadium N64","Pokemon Stadium 2 N64",
-    "Pokemon Colosseum GameCube","Pokemon XD Gale of Darkness GameCube"
-  ],
   switch: [
     "Mario Kart 8 Deluxe Switch","Animal Crossing New Horizons Switch","Super Smash Bros Ultimate Switch",
     "Super Mario Odyssey Switch","Zelda Breath of the Wild Switch","Zelda Tears of the Kingdom Switch",
@@ -207,7 +187,7 @@ var allGames = {
     "Pokemon Let's Go Pikachu Switch","Pokemon Let's Go Evoli Switch",
     "Pokemon Epee Switch","Pokemon Bouclier Switch","Pokemon Legendes Arceus Switch",
     "Pokemon Ecarlate Switch","Pokemon Violet Switch","New Pokemon Snap Switch",
-    "Pokken Tournament DX Switch","Pokemon Diamant Etincelant Switch","Pokemon Perle Scintillante Switch"
+    "Pokemon Diamant Etincelant Switch","Pokemon Perle Scintillante Switch"
   ],
   ps5: [
     "Demon's Souls PS5","Ratchet and Clank Rift Apart PS5","Returnal PS5",
@@ -271,10 +251,9 @@ var allGames = {
     "Spyro the Dragon PS1","Tekken PS1","Tekken 2 PS1","Tekken 3 PS1",
     "Gran Turismo PS1","Gran Turismo 2 PS1","Tomb Raider PS1",
     "Parasite Eve PS1","Vagrant Story PS1","Legend of Dragoon PS1",
-    "Wild Arms PS1","Grandia PS1","Breath of Fire III PS1","Breath of Fire IV PS1",
-    "Tales of Destiny PS1","Persona PS1","Mega Man X4 PS1","Mega Man X5 PS1",
-    "Dino Crisis PS1","Twisted Metal PS1","Ridge Racer Type 4 PS1",
-    "Wipeout PS1","Ace Combat PS1","Syphon Filter PS1","Medal of Honor PS1"
+    "Wild Arms PS1","Grandia PS1","Breath of Fire III PS1","Tales of Destiny PS1",
+    "Persona PS1","Mega Man X4 PS1","Dino Crisis PS1","Twisted Metal PS1",
+    "Ridge Racer Type 4 PS1","Wipeout PS1","Ace Combat PS1","Syphon Filter PS1"
   ],
   gamecube: [
     "Super Smash Bros Melee GameCube","Zelda Wind Waker GameCube","Zelda Twilight Princess GameCube",
@@ -306,8 +285,7 @@ var allGames = {
     "Tetris Game Boy","Pokemon Rouge Game Boy","Pokemon Bleu Game Boy","Pokemon Jaune Game Boy",
     "Zelda Link's Awakening Game Boy","Super Mario Land Game Boy","Super Mario Land 2 Game Boy",
     "Wario Land Game Boy","Kirby's Dream Land Game Boy","Metroid II Game Boy",
-    "DuckTales Game Boy","Contra The Alien Wars Game Boy","Bubble Bobble Game Boy",
-    "Mega Man Dr Wily's Revenge Game Boy","Mega Man II Game Boy"
+    "DuckTales Game Boy","Contra The Alien Wars Game Boy","Bubble Bobble Game Boy"
   ],
   snes: [
     "Super Mario World SNES","Super Mario Kart SNES","Super Mario RPG SNES",
@@ -332,10 +310,10 @@ Object.values(allGames).forEach(function(list) {
   list.forEach(function(g) { if (predefined.indexOf(g) === -1) predefined.push(g); });
 });
 
-function setCategory(cat) {
+function setCategory(cat, el) {
   currentCategory = cat;
   document.querySelectorAll('.cat-btn').forEach(function(b) { b.classList.remove('active'); });
-  event.target.classList.add('active');
+  el.classList.add('active');
   document.getElementById('q').value = '';
   showSuggestions();
 }
