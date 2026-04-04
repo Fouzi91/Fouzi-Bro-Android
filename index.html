@@ -62,17 +62,43 @@
   .price-input:focus { outline: none; border-color: #667eea; }
   .save-btn { padding: 12px 14px; border-radius: 14px; border: none; background: linear-gradient(135deg, #667eea, #764ba2); color: white; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
   .online-prices { margin-top: 0; }
-  .price-entry { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .price-entry { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border); }
   .price-entry:last-child { border-bottom: none; }
-  .price-entry-name { flex: 1; font-size: 14px; font-weight: 500; color: var(--text); }
+  .price-entry-info { flex: 1; min-width: 0; }
+  .price-entry-name { font-size: 14px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .price-entry-meta { font-size: 11px; color: var(--text2); }
-  .price-entry-price { color: #667eea; font-weight: 700; font-size: 15px; }
+  .price-entry-price { color: #667eea; font-weight: 700; font-size: 15px; white-space: nowrap; }
+  .price-actions { display: flex; gap: 4px; flex-shrink: 0; }
+  .action-btn { background: none; border: none; cursor: pointer; font-size: 16px; padding: 4px; border-radius: 6px; }
+  .action-btn:hover { background: var(--border); }
   .empty-msg { font-size: 13px; color: var(--text2); text-align: center; padding: 1rem 0; }
   .status { font-size: 12px; color: var(--text2); text-align: center; margin-top: 8px; }
+  .edit-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; }
+  .edit-modal.show { display: flex; }
+  .edit-box { background: var(--card); border-radius: 20px; padding: 1.5rem; width: 90%; max-width: 380px; }
+  .edit-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 1rem; }
+  .edit-name { font-size: 14px; color: var(--text2); margin-bottom: 0.5rem; }
+  .edit-input { width: 100%; padding: 12px 14px; font-size: 15px; border: 2px solid var(--border); border-radius: 14px; background: var(--input-bg); color: var(--text); margin-bottom: 1rem; }
+  .edit-input:focus { outline: none; border-color: #667eea; }
+  .edit-btns { display: flex; gap: 10px; }
+  .edit-save { flex: 1; padding: 12px; border-radius: 14px; border: none; background: linear-gradient(135deg, #667eea, #764ba2); color: white; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .edit-cancel { flex: 1; padding: 12px; border-radius: 14px; border: 1.5px solid var(--border); background: none; color: var(--text2); font-size: 14px; font-weight: 700; cursor: pointer; }
 </style>
 </head>
 <body>
 <button class="dark-toggle" onclick="toggleDark()" id="darkBtn">🌙</button>
+
+<div class="edit-modal" id="editModal">
+  <div class="edit-box">
+    <div class="edit-title">✏️ Modifier le prix</div>
+    <div class="edit-name" id="editName"></div>
+    <input type="number" class="edit-input" id="editPrice" placeholder="Nouveau prix (€)" />
+    <div class="edit-btns">
+      <button class="edit-cancel" onclick="closeEdit()">Annuler</button>
+      <button class="edit-save" onclick="saveEdit()">Sauvegarder</button>
+    </div>
+  </div>
+</div>
 
 <div class="app">
   <div class="card">
@@ -140,7 +166,9 @@
 <script>
 var DB_URL = 'https://fouzi-hichem-default-rtdb.firebaseio.com';
 var onlinePrices = [];
+var onlineKeys = [];
 var currentCategory = 'tous';
+var editKey = null;
 var BASE = 'https://fouzi91.github.io/Fouzi-Bro-Android/';
 
 function getIcon(name) {
@@ -161,8 +189,8 @@ function getIcon(name) {
   if (n.includes(' nes') || n.includes('nintendo nes')) return '<img class="con-icon" src="'+b+'NES.png" onerror="this.src=\'\'">';
   if (n.includes('3ds')) return '<img class="con-icon" src="'+b+'Nintendo_3DS.png" onerror="this.src=\'\'">';
   if (n.includes('nintendo ds') || n.includes(' ds')) return '<img class="con-icon" src="'+b+'Nintendo_DS.png" onerror="this.src=\'\'">';
-  if (n.includes('wii u')) return '<img class="con-icon" src="'+b+'Wii_U.png" onerror="this.src=\'\'">>';
-  if (n.includes('wii')) return '<img class="con-icon" src="'+b+'Wii.png" onerror="this.src=\'\'">>';
+  if (n.includes('wii u')) return '<img class="con-icon" src="'+b+'Wii_U.png" onerror="this.src=\'\'">';
+  if (n.includes('wii')) return '<img class="con-icon" src="'+b+'Wii.png" onerror="this.src=\'\'">';
   if (n.includes('mega drive') || n.includes('sega')) return '🕹️';
   return '🎮';
 }
@@ -225,7 +253,14 @@ var allGames = {
     "Blasphemous Switch","Bloodstained Ritual of the Night Switch",
     "Scott Pilgrim Switch","River City Girls Switch","TMNT Cowabunga Collection Switch",
     "Katana Zero Switch","Untitled Goose Game Switch","A Short Hike Switch",
-    "Ori and the Will of the Wisps Switch","Chained Echoes Switch","Omori Switch"
+    "Ori and the Will of the Wisps Switch","Chained Echoes Switch","Omori Switch",
+    "Cassette Beasts Switch","Tunic Switch","Kena Bridge of Spirits Switch",
+    "Death's Door Switch","Baba Is You Switch","Cadence of Hyrule Switch",
+    "Golf Story Switch","Night in the Woods Switch","Sayonara Wild Hearts Switch",
+    "Transistor Switch","Bastion Switch","CrossCode Switch","Eastward Switch",
+    "Monster Sanctuary Switch","Phoenotopia Awakening Switch","Return of the Obra Dinn Switch",
+    "Paradise Killer Switch","The Forgotten City Switch","Axiom Verge 2 Switch",
+    "Narita Boy Switch","Loop Hero Switch","Monster Train Switch","Shovel Knight Dig Switch"
   ],
   ps5: [
     "Astro's Playroom PS5","Demon's Souls Remake PS5","Ratchet and Clank Rift Apart PS5",
@@ -247,12 +282,11 @@ var allGames = {
     "The Witcher 3 PS5","Assassin's Creed Mirage PS5","Assassin's Creed Valhalla PS5",
     "Assassin's Creed Shadows PS5","Avatar Frontiers of Pandora PS5",
     "Star Wars Jedi Fallen Order PS5","Star Wars Jedi Survivor PS5",
-    "Marvel Guardians of the Galaxy PS5","Marvel Midnight Suns PS5",
-    "Gotham Knights PS5","Hogwarts Legacy PS5","A Plague Tale Requiem PS5",
+    "Marvel Guardians of the Galaxy PS5","Hogwarts Legacy PS5","A Plague Tale Requiem PS5",
     "Ghostrunner 2 PS5","Control Ultimate Edition PS5","Alan Wake 2 PS5",
     "Dead Space Remake PS5","Resident Evil 4 Remake PS5","Resident Evil Village PS5",
-    "Resident Evil 3 Remake PS5","Until Dawn Remake PS5",
-    "Little Nightmares II PS5","Outlast Trials PS5","Five Nights Freddy Security Breach PS5",
+    "Resident Evil 3 Remake PS5","Until Dawn Remake PS5","Silent Hill 2 Remake PS5",
+    "Little Nightmares II PS5","Outlast Trials PS5","Dead Island 2 PS5",
     "Helldivers 2 PS5","Call of Duty Modern Warfare II PS5","Call of Duty Modern Warfare III PS5",
     "Battlefield 2042 PS5","Rainbow Six Siege PS5","Apex Legends PS5",
     "Fortnite PS5","Overwatch 2 PS5","Destiny 2 PS5",
@@ -263,15 +297,18 @@ var allGames = {
     "Naruto x Boruto Storm Connections PS5","One Piece Odyssey PS5",
     "Tekken 8 PS5","Mortal Kombat 1 PS5","Street Fighter 6 PS5",
     "Guilty Gear Strive PS5","King of Fighters XV PS5",
-    "Granblue Fantasy Versus Rising PS5","Need for Speed Unbound PS5",
-    "Rocket League PS5","Fall Guys PS5","It Takes Two PS5",
+    "Need for Speed Unbound PS5","Rocket League PS5","Fall Guys PS5","It Takes Two PS5",
     "Stardew Valley PS5","Hades PS5","Hades II PS5","Celeste PS5","Cuphead PS5",
-    "Hollow Knight Silksong PS5","Kena Bridge of Spirits PS5","Stray PS5",
-    "Dave the Diver PS5","Sea of Stars PS5","Vampire Survivors PS5",
-    "Sifu PS5","Tunic PS5","Disco Elysium PS5","Outer Wilds PS5",
-    "Life is Strange True Colors PS5","Mass Effect Legendary Edition PS5",
-    "Subnautica PS5","No Man's Sky PS5","The Outer Worlds PS5",
-    "Forspoken PS5","Atomic Heart PS5","Suicide Squad Kill Justice League PS5"
+    "Kena Bridge of Spirits PS5","Stray PS5","Dave the Diver PS5","Sea of Stars PS5",
+    "Vampire Survivors PS5","Sifu PS5","Tunic PS5","Disco Elysium PS5",
+    "Mass Effect Legendary Edition PS5","Subnautica PS5","No Man's Sky PS5",
+    "Forspoken PS5","Atomic Heart PS5","Wukong Black Myth PS5",
+    "God of War 2018 PS5","Spider-Man Remastered PS5","Horizon Zero Dawn Remastered PS5",
+    "Uncharted Legacy of Thieves PS5","Ghost of Tsushima PS5",
+    "Nioh PS5","Dark Souls III PS5","Remnant II PS5",
+    "Immortals Fenyx Rising PS5","Riders Republic PS5","Far Cry 6 PS5",
+    "Watch Dogs Legion PS5","NBA 2K PS5","EA Sports FC PS5",
+    "Tony Hawk Pro Skater 1+2 PS5","Gran Turismo 7 PS5","F1 2023 PS5","Dirt 5 PS5"
   ],
   ps4: [
     "The Last of Us Part II PS4","God of War PS4","Spider-Man PS4",
@@ -298,44 +335,37 @@ var allGames = {
     "Middle Earth Shadow of Mordor PS4","Middle Earth Shadow of War PS4",
     "The Division PS4","The Division 2 PS4","Destiny PS4","Destiny 2 PS4",
     "Fallout 4 PS4","Fallout 76 PS4","Skyrim Special Edition PS4",
-    "Mass Effect Legendary Edition PS4","Dragon Age Inquisition PS4","Anthem PS4",
-    "Outriders PS4","Borderlands 3 PS4","Tiny Tina's Wonderlands PS4",
-    "Diablo III PS4","Diablo IV PS4",
+    "Mass Effect Legendary Edition PS4","Dragon Age Inquisition PS4",
+    "Borderlands 3 PS4","Tiny Tina's Wonderlands PS4","Diablo III PS4","Diablo IV PS4",
     "Call of Duty Advanced Warfare PS4","Call of Duty Black Ops III PS4",
-    "Call of Duty Infinite Warfare PS4","Call of Duty WWII PS4",
-    "Call of Duty Black Ops 4 PS4","Call of Duty Modern Warfare 2019 PS4",
+    "Call of Duty WWII PS4","Call of Duty Modern Warfare 2019 PS4",
     "Call of Duty Black Ops Cold War PS4","Call of Duty Vanguard PS4",
     "Battlefield 1 PS4","Battlefield V PS4","Titanfall 2 PS4",
-    "Apex Legends PS4","Fortnite PS4","Warzone PS4","Overwatch PS4","Overwatch 2 PS4",
-    "Rainbow Six Siege PS4","Star Wars Battlefront 2015 PS4","Star Wars Battlefront II 2017 PS4",
+    "Apex Legends PS4","Fortnite PS4","Overwatch PS4","Rainbow Six Siege PS4",
+    "Star Wars Battlefront 2015 PS4","Star Wars Battlefront II 2017 PS4",
     "Bioshock Collection PS4","Dishonored 2 PS4","Prey 2017 PS4",
     "Alien Isolation PS4","SOMA PS4","Outlast PS4","Outlast 2 PS4",
     "Resident Evil 7 PS4","Resident Evil 2 Remake PS4","Resident Evil 3 Remake PS4",
     "Resident Evil Village PS4","Until Dawn PS4","Man of Medan PS4",
     "Little Hope PS4","House of Ashes PS4","Control PS4","Alan Wake Remastered PS4",
-    "Returnal PS4","Ghostwire Tokyo PS4","Deathloop PS4","Helldivers 2 PS4",
     "Need for Speed 2015 PS4","Need for Speed Payback PS4","Need for Speed Heat PS4",
     "Gran Turismo 7 PS4","WipEout Omega Collection PS4",
     "Rocket League PS4","Fall Guys PS4","Among Us PS4",
     "It Takes Two PS4","A Way Out PS4","Overcooked 2 PS4",
-    "Unravel PS4","Unravel Two PS4","Little Nightmares PS4","Little Nightmares II PS4",
-    "Ori and the Will of the Wisps PS4","Hollow Knight PS4","Celeste PS4",
-    "Hades PS4","Dead Cells PS4","Cuphead PS4","Shovel Knight PS4",
-    "Undertale PS4","Stardew Valley PS4","Minecraft PS4","Minecraft Story Mode PS4",
-    "Life is Strange PS4","Life is Strange 2 PS4","Life is Strange True Colors PS4",
-    "Vampyr PS4","A Plague Tale Innocence PS4","A Plague Tale Requiem PS4",
-    "Greedfall PS4","The Surge PS4","The Surge 2 PS4","Code Vein PS4",
-    "Scarlet Nexus PS4","Tales of Arise PS4","Tales of Berseria PS4",
-    "Atelier Ryza PS4","Atelier Ryza 2 PS4","Atelier Ryza 3 PS4",
-    "Ni No Kuni II PS4","Sword Art Online Hollow Realization PS4",
+    "Little Nightmares PS4","Little Nightmares II PS4",
+    "Hollow Knight PS4","Celeste PS4","Hades PS4","Dead Cells PS4","Cuphead PS4",
+    "Stardew Valley PS4","Life is Strange PS4","Life is Strange 2 PS4",
+    "Life is Strange True Colors PS4","A Plague Tale Innocence PS4","A Plague Tale Requiem PS4",
+    "Code Vein PS4","Scarlet Nexus PS4","Tales of Arise PS4","Tales of Berseria PS4",
+    "Atelier Ryza PS4","Atelier Ryza 2 PS4","Ni No Kuni II PS4",
     "Dragon Ball FighterZ PS4","Dragon Ball Xenoverse 2 PS4","Dragon Ball Z Kakarot PS4",
-    "Naruto Storm 4 PS4","One Piece World Seeker PS4","One Piece Pirate Warriors 4 PS4",
-    "My Hero One's Justice PS4","My Hero One's Justice 2 PS4","Jump Force PS4",
+    "Naruto Storm 4 PS4","One Piece Pirate Warriors 4 PS4",
     "Demon Slayer Hinokami Chronicles PS4","Tekken 7 PS4","Mortal Kombat X PS4",
     "Mortal Kombat 11 PS4","Street Fighter V PS4","Guilty Gear Strive PS4",
-    "Injustice Gods Among Us PS4","Injustice 2 PS4",
-    "Marvel vs Capcom Infinite PS4","Soul Calibur VI PS4",
-    "Dead or Alive 6 PS4","King of Fighters XV PS4","Granblue Fantasy Versus PS4"
+    "Injustice 2 PS4","Soul Calibur VI PS4","King of Fighters XV PS4",
+    "FIFA PS4","NBA 2K PS4","Madden NFL PS4","WWE 2K PS4",
+    "Tony Hawk Pro Skater 1+2 PS4","Riders Republic PS4","Steep PS4",
+    "F1 2021 PS4","MotoGP PS4","Dirt 5 PS4","No Man's Sky PS4","Minecraft PS4"
   ],
   ps3: [
     "The Last of Us PS3","Uncharted Drake's Fortune PS3","Uncharted 2 Among Thieves PS3",
@@ -359,44 +389,37 @@ var allGames = {
     "Call of Duty Black Ops II PS3","Call of Duty Ghosts PS3",
     "Battlefield 3 PS3","Battlefield 4 PS3","Battlefield Bad Company PS3",
     "Battlefield Bad Company 2 PS3","Medal of Honor 2010 PS3","Spec Ops The Line PS3",
-    "Army of Two PS3","Army of Two 40th Day PS3",
-    "Splinter Cell Conviction PS3","Splinter Cell Blacklist PS3",
+    "Army of Two PS3","Splinter Cell Conviction PS3","Splinter Cell Blacklist PS3",
     "Dead Space PS3","Dead Space 2 PS3","Dead Space 3 PS3",
-    "Resident Evil 5 PS3","Resident Evil 6 PS3","Resident Evil Operation Raccoon City PS3",
-    "Silent Hill Downpour PS3","Silent Hill HD Collection PS3",
-    "Infamous Festival of Blood PS3","Journey PS3","Flower PS3","Puppeteer PS3",
-    "The Walking Dead Telltale PS3","The Wolf Among Us PS3",
-    "Tales from the Borderlands PS3","Portal 2 PS3","Mirror's Edge PS3",
-    "Dishonored PS3","Deus Ex Human Revolution PS3","Deus Ex Mankind Divided PS3",
+    "Resident Evil 5 PS3","Resident Evil 6 PS3","Silent Hill Downpour PS3",
+    "Journey PS3","Flower PS3","Puppeteer PS3","The Walking Dead Telltale PS3",
+    "Portal 2 PS3","Dishonored PS3","Deus Ex Human Revolution PS3",
     "Sleeping Dogs PS3","L.A. Noire PS3","Mafia II PS3",
     "Saints Row The Third PS3","Saints Row IV PS3","Just Cause 2 PS3",
     "Far Cry 3 PS3","Far Cry 4 PS3","Watch Dogs PS3",
-    "Need for Speed Hot Pursuit 2010 PS3","Need for Speed Most Wanted 2012 PS3",
     "Gran Turismo 5 PS3","Gran Turismo 6 PS3","MotorStorm PS3",
-    "MotorStorm Pacific Rift PS3","MotorStorm Apocalypse PS3",
-    "WipEout HD PS3","Burnout Paradise PS3","Ridge Racer 7 PS3",
-    "Sonic Generations PS3","Sonic Unleashed PS3","Sonic the Hedgehog 2006 PS3",
-    "Dragon Ball Z Battle of Z PS3","Dragon Ball Xenoverse PS3",
+    "MotorStorm Pacific Rift PS3","WipEout HD PS3","Burnout Paradise PS3",
+    "Sonic Generations PS3","Dragon Ball Xenoverse PS3",
     "Naruto Storm PS3","Naruto Storm 2 PS3","Naruto Storm 3 PS3","Naruto Storm Revolution PS3",
     "One Piece Pirate Warriors PS3","One Piece Pirate Warriors 2 PS3","One Piece Pirate Warriors 3 PS3",
-    "Bleach Soul Resurreccion PS3","Tekken 6 PS3","Tekken Tag Tournament 2 PS3",
-    "Street Fighter IV PS3","Super Street Fighter IV PS3",
-    "Ultimate Marvel vs Capcom 3 PS3","Mortal Kombat 2011 PS3",
-    "Soul Calibur IV PS3","Soul Calibur V PS3","Virtua Fighter 5 PS3",
-    "Dead or Alive 5 PS3","King of Fighters XIII PS3","Guilty Gear Xrd PS3",
-    "Persona 4 Arena PS3","Persona 4 Arena Ultimax PS3",
-    "Yakuza 3 PS3","Yakuza 4 PS3","Yakuza 5 PS3","Yakuza Dead Souls PS3","Yakuza 0 PS3",
-    "Valkyria Chronicles PS3","Atelier Rorona PS3","Atelier Totori PS3","Atelier Meruru PS3",
-    "Disgaea 3 PS3","Disgaea 4 PS3","Hyperdimension Neptunia PS3",
+    "Tekken 6 PS3","Street Fighter IV PS3","Mortal Kombat 2011 PS3",
+    "Soul Calibur IV PS3","Soul Calibur V PS3","Persona 4 Arena PS3",
+    "Yakuza 3 PS3","Yakuza 4 PS3","Yakuza 5 PS3","Yakuza 0 PS3",
+    "Valkyria Chronicles PS3","Disgaea 3 PS3","Disgaea 4 PS3",
     "Tales of Graces F PS3","Tales of Xillia PS3","Tales of Xillia 2 PS3",
-    "Tales of Symphonia Chronicles PS3","Eternal Sonata PS3","Star Ocean Last Hope PS3",
-    "White Knight Chronicles PS3","White Knight Chronicles II PS3",
-    "3D Dot Game Heroes PS3","Folklore PS3","Heavenly Sword PS3",
-    "Twisted Metal 2012 PS3","Warhawk PS3","MAG PS3","Starhawk PS3",
-    "PlayStation All-Stars Battle Royale PS3","Sports Champions PS3",
-    "Spider-Man Edge of Time PS3","Spider-Man Shattered Dimensions PS3",
-    "The Amazing Spider-Man PS3","Iron Man PS3","Iron Man 2 PS3",
-    "Thor God of Thunder PS3","Captain America Super Soldier PS3"
+    "Tales of Symphonia Chronicles PS3","Folklore PS3","Heavenly Sword PS3",
+    "PlayStation All-Stars Battle Royale PS3","Spider-Man Shattered Dimensions PS3",
+    "The Amazing Spider-Man PS3","Iron Man PS3","Thor God of Thunder PS3",
+    "Prototype PS3","Prototype 2 PS3","Ratchet and Clank Future PS3",
+    "Sly Cooper Thieves in Time PS3","Jak and Daxter Collection PS3",
+    "Tomb Raider 2013 PS3","Max Payne 3 PS3","Vanquish PS3","Bayonetta PS3",
+    "Dragon's Dogma PS3","Dragon Age Inquisition PS3","The Witcher 2 PS3",
+    "White Knight Chronicles PS3","Eternal Sonata PS3","Star Ocean Last Hope PS3",
+    "Atelier Rorona PS3","Atelier Totori PS3","Atelier Meruru PS3",
+    "Hyperdimension Neptunia PS3","3D Dot Game Heroes PS3","Warhawk PS3",
+    "MAG PS3","ModNation Racers PS3","Need for Speed Hot Pursuit 2010 PS3",
+    "Need for Speed Most Wanted 2012 PS3","Ridge Racer 7 PS3",
+    "MotorStorm Apocalypse PS3","WipEout HD Fury PS3","Starhawk PS3"
   ],
   ps2: [
     "GTA San Andreas PS2","GTA Vice City PS2","GTA III PS2",
@@ -416,7 +439,6 @@ var allGames = {
     "Naruto Ultimate Ninja 4 PS2","Naruto Ultimate Ninja 5 PS2",
     "One Piece Grand Adventure PS2","Bleach Blade Battlers PS2",
     "Crash Bandicoot Wrath of Cortex PS2","Crash Twinsanity PS2","Crash of the Titans PS2",
-    "Spyro Enter the Dragonfly PS2",
     "Jak and Daxter PS2","Jak II PS2","Jak 3 PS2","Jak X Combat Racing PS2",
     "Ratchet and Clank PS2","Ratchet and Clank Going Commando PS2",
     "Ratchet and Clank Up Your Arsenal PS2","Ratchet Deadlocked PS2",
@@ -459,7 +481,10 @@ var allGames = {
     "Dance Dance Revolution Extreme PS2","Dance Dance Revolution SuperNova PS2",
     "Disgaea Hour of Darkness PS2","Disgaea 2 PS2",
     "La Pucelle Tactics PS2","Phantom Brave PS2","Makai Kingdom PS2",
-    "Steambot Chronicles PS2","Monster Hunter PS2","Disaster Report PS2"
+    "Steambot Chronicles PS2","Monster Hunter PS2","Disaster Report PS2",
+    "Amplitude PS2","Frequency PS2","Red Faction PS2","Red Faction II PS2",
+    "ATV Offroad Fury PS2","ATV Offroad Fury 2 PS2","Smuggler's Run PS2",
+    "Midnight Club PS2","Moto GP PS2","Tourist Trophy PS2"
   ],
   ps1: [
     "Final Fantasy VII PS1","Final Fantasy VIII PS1","Final Fantasy IX PS1",
@@ -494,16 +519,14 @@ var allGames = {
     "V-Rally PS1","V-Rally 2 PS1","Colin McRae Rally PS1","Colin McRae Rally 2 PS1",
     "Ridge Racer PS1","Ridge Racer Revolution PS1","Ridge Racer Type 4 PS1",
     "Need for Speed III Hot Pursuit PS1","Need for Speed High Stakes PS1",
-    "Need for Speed Porsche Unleashed PS1",
-    "Ace Combat 2 PS1","Ace Combat 3 PS1",
-    "Command Conquer Red Alert PS1","Worms Armageddon PS1","Worms World Party PS1",
+    "Need for Speed Porsche Unleashed PS1","Ace Combat 2 PS1","Ace Combat 3 PS1",
+    "Worms Armageddon PS1","Worms World Party PS1",
     "Dino Crisis PS1","Dino Crisis 2 PS1","Tenchu Stealth Assassins PS1","Tenchu 2 PS1",
     "Bushido Blade PS1","Bushido Blade 2 PS1","Ehrgeiz PS1","Tobal No 1 PS1",
     "Street Fighter EX Plus Alpha PS1","Marvel vs Capcom PS1",
     "X-Men vs Street Fighter PS1","King of Fighters 99 PS1","King of Fighters 2000 PS1",
     "Darkstalkers 3 PS1","Guilty Gear PS1","Rival Schools PS1",
     "Star Wars Dark Forces PS1","Star Wars Jedi Power Battles PS1",
-    "Star Wars Episode I Phantom Menace PS1",
     "Blood Omen Legacy of Kain PS1","Soul Reaver PS1",
     "Vandal Hearts PS1","Vandal Hearts II PS1","Arc the Lad Collection PS1",
     "Grandia PS1","Lunar Silver Star Story Complete PS1","Lunar 2 Eternal Blue PS1",
@@ -511,20 +534,23 @@ var allGames = {
     "Persona PS1","Persona 2 Eternal Punishment PS1","Koudelka PS1",
     "Harvest Moon Back to Nature PS1","Mega Man Legends PS1","Mega Man Legends 2 PS1",
     "Mega Man X4 PS1","Mega Man X5 PS1","Mega Man X6 PS1","Mega Man 8 PS1",
-    "Castlevania Chronicles PS1","Contra Legacy of War PS1",
     "Thunder Force V PS1","R-Type Delta PS1","Gradius Gaiden PS1","Einhander PS1",
     "Jumping Flash PS1","Jumping Flash 2 PS1","Croc Legend of the Gobbos PS1","Croc 2 PS1",
-    "Cool Boarders 2 PS1","Cool Boarders 3 PS1",
-    "Die Hard Trilogy PS1","Die Hard Trilogy 2 PS1",
-    "Chocobo's Dungeon 2 PS1","Chocobo Racing PS1",
-    "Destruction Derby PS1","Worms Armageddon PS1","Quake II PS1","Doom PS1"
+    "Cool Boarders 2 PS1","Cool Boarders 3 PS1","Die Hard Trilogy PS1",
+    "Chocobo's Dungeon 2 PS1","Chocobo Racing PS1","Quake II PS1","Doom PS1",
+    "Twisted Metal PS1","Twisted Metal 3 PS1","Twisted Metal 4 PS1",
+    "Wipeout PS1","Wipeout 2097 PS1","Wipeout 3 PS1",
+    "Syphon Filter PS1","Syphon Filter 2 PS1","Syphon Filter 3 PS1",
+    "Colony Wars PS1","G-Police PS1","Armored Core PS1",
+    "Street Sk8er PS1","ESPN Extreme Games PS1","Jet Moto PS1","Road Rash 3D PS1"
   ],
   gamecube: [
     "Super Smash Bros Melee GameCube","Zelda Wind Waker GameCube","Zelda Twilight Princess GameCube",
     "Super Mario Sunshine GameCube","Luigi's Mansion GameCube","Mario Kart Double Dash GameCube",
     "Mario Party 4 GameCube","Mario Party 5 GameCube","Mario Party 6 GameCube","Mario Party 7 GameCube",
     "Paper Mario Thousand Year Door GameCube","Pokemon Colosseum GameCube",
-    "Pokemon XD Gale of Darkness GameCube","Metroid Prime GameCube","Metroid Prime 2 Echoes GameCube",
+    "Pokemon XD Gale of Darkness GameCube","Pokemon Channel GameCube",
+    "Metroid Prime GameCube","Metroid Prime 2 Echoes GameCube",
     "Star Fox Adventures GameCube","Star Fox Assault GameCube","F-Zero GX GameCube",
     "Pikmin GameCube","Pikmin 2 GameCube","Kirby Air Ride GameCube",
     "Animal Crossing GameCube","Fire Emblem Path of Radiance GameCube",
@@ -534,8 +560,30 @@ var allGames = {
     "Soul Calibur II GameCube","Viewtiful Joe GameCube","Viewtiful Joe 2 GameCube",
     "Sonic Adventure 2 Battle GameCube","Sonic Adventure DX GameCube","Sonic Heroes GameCube",
     "Beyond Good and Evil GameCube","Killer7 GameCube","Eternal Darkness GameCube",
-    "Baten Kaitos GameCube","Skies of Arcadia Legends GameCube","TimeSplitters 2 GameCube",
-    "Need for Speed Most Wanted GameCube","Burnout 2 GameCube"
+    "Baten Kaitos GameCube","Baten Kaitos Origins GameCube","Skies of Arcadia Legends GameCube",
+    "TimeSplitters 2 GameCube","TimeSplitters Future Perfect GameCube",
+    "Need for Speed Most Wanted GameCube","Need for Speed Underground GameCube",
+    "Burnout 2 GameCube","Burnout 3 Takedown GameCube",
+    "Prince of Persia Sands of Time GameCube","Splinter Cell GameCube",
+    "Splinter Cell Chaos Theory GameCube","Spider-Man GameCube","Spider-Man 2 GameCube",
+    "Lego Star Wars GameCube","Star Wars Rogue Squadron II GameCube",
+    "Star Wars Rogue Squadron III GameCube","Star Wars Clone Wars GameCube",
+    "Call of Duty GameCube","Medal of Honor Frontline GameCube",
+    "Tony Hawk Pro Skater 3 GameCube","Tony Hawk Pro Skater 4 GameCube",
+    "Tony Hawk Underground GameCube","SSX Tricky GameCube","SSX 3 GameCube",
+    "Wave Race Blue Storm GameCube","1080 Avalanche GameCube",
+    "Mario Golf Toadstool Tour GameCube","Mario Power Tennis GameCube",
+    "Mario Superstar Baseball GameCube","Mario Strikers GameCube",
+    "Wario World GameCube","WarioWare Inc GameCube",
+    "Donkey Konga GameCube","Donkey Kong Jungle Beat GameCube",
+    "Crash Bandicoot Wrath of Cortex GameCube","Crash Nitro Kart GameCube",
+    "Rayman 3 GameCube","Mortal Kombat Deadly Alliance GameCube",
+    "NBA Street Vol 2 GameCube","FIFA GameCube",
+    "Harry Potter Sorcerer's Stone GameCube","Harry Potter Chamber of Secrets GameCube",
+    "Lord of the Rings Two Towers GameCube","Pac-Man World 2 GameCube",
+    "Bomberman Generation GameCube","Custom Robo GameCube",
+    "Ikaruga GameCube","P.N.03 GameCube","Geist GameCube",
+    "Battalion Wars GameCube","Lost Kingdoms GameCube"
   ],
   gba: [
     "Pokemon Rubis GBA","Pokemon Saphir GBA","Pokemon Emeraude GBA",
@@ -543,104 +591,179 @@ var allGames = {
     "Zelda Minish Cap GBA","Zelda A Link to the Past GBA","Zelda Four Swords GBA",
     "Super Mario Advance GBA","Super Mario Advance 2 GBA","Super Mario Advance 3 GBA","Super Mario Advance 4 GBA",
     "Mario Kart Super Circuit GBA","Mario and Luigi Superstar Saga GBA","Mario vs Donkey Kong GBA",
+    "Mario Party Advance GBA","Mario Golf Advance Tour GBA","Mario Tennis Power Tour GBA",
     "Donkey Kong Country GBA","Donkey Kong Country 2 GBA","Donkey Kong Country 3 GBA",
     "Kirby Nightmare in Dream Land GBA","Kirby Amazing Mirror GBA",
     "Metroid Fusion GBA","Metroid Zero Mission GBA","Fire Emblem GBA","Fire Emblem Sacred Stones GBA",
     "Golden Sun GBA","Golden Sun Lost Age GBA","Advance Wars GBA","Advance Wars 2 GBA",
     "Wario Land 4 GBA","WarioWare Mega Microgame GBA","WarioWare Twisted GBA",
+    "Yoshi's Island GBA","Yoshi Topsy-Turvy GBA",
     "Castlevania Circle of the Moon GBA","Castlevania Harmony of Dissonance GBA","Castlevania Aria of Sorrow GBA",
     "Mega Man Zero GBA","Mega Man Zero 2 GBA","Mega Man Zero 3 GBA","Mega Man Zero 4 GBA",
     "Mega Man Battle Network GBA","Mega Man Battle Network 2 GBA","Mega Man Battle Network 3 GBA",
+    "Mega Man Battle Network 4 GBA","Mega Man Battle Network 5 GBA","Mega Man Battle Network 6 GBA",
     "Sonic Advance GBA","Sonic Advance 2 GBA","Sonic Advance 3 GBA","Sonic Battle GBA",
-    "Crash Bandicoot Huge Adventure GBA","Spyro Season of Ice GBA",
+    "Crash Bandicoot Huge Adventure GBA","Crash Bandicoot N-Tranced GBA",
+    "Spyro Season of Ice GBA","Spyro Season of Flame GBA",
     "Dragonball Z Legacy of Goku GBA","Dragonball Z Legacy of Goku II GBA","Dragonball Z Buu's Fury GBA",
-    "Naruto Ninja Council GBA","Yu-Gi-Oh Worldwide Edition GBA",
+    "Dragonball Z Supersonic Warriors GBA","Naruto Ninja Council GBA","Naruto Ninja Council 2 GBA",
+    "Yu-Gi-Oh Worldwide Edition GBA","Yu-Gi-Oh Eternal Duelist Soul GBA",
     "Final Fantasy I II Dawn of Souls GBA","Final Fantasy IV Advance GBA",
     "Final Fantasy V Advance GBA","Final Fantasy VI Advance GBA","Final Fantasy Tactics Advance GBA",
     "Kingdom Hearts Chain of Memories GBA","Tales of Phantasia GBA",
-    "Breath of Fire GBA","Mother 3 GBA","Harvest Moon Friends of Mineral Town GBA",
-    "Boktai Sun Is in Your Hand GBA","Tony Hawk Pro Skater 2 GBA",
-    "Street Fighter Alpha 3 GBA","Bomberman Max 2 GBA","Gunstar Super Heroes GBA","Drill Dozer GBA"
+    "Breath of Fire GBA","Breath of Fire II GBA","Mother 3 GBA",
+    "Harvest Moon Friends of Mineral Town GBA","Harvest Moon More Friends of Mineral Town GBA",
+    "Tactics Ogre Knight of Lodis GBA","Sword of Mana GBA","Riviera The Promised Land GBA",
+    "Boktai Sun Is in Your Hand GBA","Boktai 2 Solar Boy Django GBA",
+    "Tony Hawk Pro Skater 2 GBA","Tony Hawk Pro Skater 3 GBA",
+    "Street Fighter Alpha 3 GBA","Tekken Advance GBA","Mortal Kombat Deadly Alliance GBA",
+    "Bomberman Max 2 GBA","Bomberman Tournament GBA",
+    "Gunstar Super Heroes GBA","Drill Dozer GBA","Kuru Kuru Kururin GBA",
+    "Harry Potter Sorcerer's Stone GBA","Harry Potter Chamber of Secrets GBA",
+    "Harry Potter Prisoner of Azkaban GBA","Harry Potter Goblet of Fire GBA",
+    "Lord of the Rings Two Towers GBA","Spider-Man GBA","Spider-Man 2 GBA",
+    "Need for Speed Underground GBA","Need for Speed Most Wanted GBA",
+    "SSX Tricky GBA","Shining Soul GBA","Shining Soul II GBA"
   ],
   gbc: [
     "Pokemon Or Game Boy Color","Pokemon Argent Game Boy Color","Pokemon Cristal Game Boy Color",
     "Pokemon Rouge Feu GBC","Pokemon Vert Feuille GBC","Pokemon Jaune GBC",
+    "Pokemon Rouge GBC","Pokemon Bleu GBC",
     "Zelda Oracle of Ages GBC","Zelda Oracle of Seasons GBC","Zelda Link's Awakening DX GBC",
     "Super Mario Bros Deluxe GBC","Mario Tennis GBC","Mario Golf GBC",
-    "Wario Land 3 GBC","Donkey Kong Country GBC","Kirby's Dream Land 2 GBC",
-    "Metroid II GBC","Castlevania Legends GBC","Mega Man Xtreme GBC","Mega Man Xtreme 2 GBC",
+    "Wario Land 3 GBC","Wario Land 2 GBC","Donkey Kong Country GBC",
+    "Kirby Tilt n Tumble GBC","Kirby's Dream Land 2 GBC","Metroid II Return of Samus GBC",
+    "Castlevania Legends GBC","Castlevania Belmont's Revenge GBC",
+    "Mega Man Xtreme GBC","Mega Man Xtreme 2 GBC","Mega Man V GBC",
     "Metal Gear Solid GBC","Dragon Warrior Monsters GBC","Dragon Warrior Monsters 2 GBC",
-    "Final Fantasy Adventure GBC","Final Fantasy Legend GBC","Shantae GBC",
-    "Survival Kids GBC","Tetris DX GBC","Game Watch Gallery 2 GBC",
-    "Worms Armageddon GBC","Tony Hawk Pro Skater GBC","Harvest Moon GBC"
+    "Dragon Warrior I II GBC","Dragon Warrior III GBC",
+    "Final Fantasy Adventure GBC","Final Fantasy Legend GBC",
+    "Final Fantasy Legend II GBC","Final Fantasy Legend III GBC",
+    "Shantae GBC","Survival Kids GBC","Tetris DX GBC",
+    "Resident Evil Gaiden GBC","Spider-Man GBC",
+    "Harry Potter Sorcerer's Stone GBC","Harry Potter Chamber of Secrets GBC",
+    "Rayman GBC","Toki Tori GBC","Mole Mania GBC",
+    "Game Watch Gallery 2 GBC","Game Watch Gallery 3 GBC","Game Watch Gallery 4 GBC",
+    "Worms Armageddon GBC","Worms World Party GBC",
+    "R-Type DX GBC","Tony Hawk Pro Skater GBC","Tony Hawk Pro Skater 2 GBC",
+    "Harvest Moon GBC","Harvest Moon GBC 2","Harvest Moon GBC 3",
+    "Tamagotchi GBC","Hamtaro Ham-Hams Unite GBC",
+    "Pac-Man Special Color Edition GBC","Tetris Plus GBC","Dr Mario GBC",
+    "Frogger GBC","Centipede GBC","Road Rash GBC",
+    "Top Gear Pocket GBC","Top Gear Pocket 2 GBC",
+    "Revelations The Demon Slayer GBC","Alone in the Dark GBC",
+    "Rugrats Totally Angelica GBC","Looney Tunes Collector GBC",
+    "F-1 Race GBC","NASCAR Challenge GBC","Dave Mirra Freestyle BMX GBC"
   ],
   gameboy: [
     "Tetris Game Boy","Pokemon Rouge Game Boy","Pokemon Bleu Game Boy","Pokemon Jaune Game Boy",
     "Zelda Link's Awakening Game Boy","Super Mario Land Game Boy","Super Mario Land 2 Game Boy",
     "Wario Land Game Boy","Wario Land II Game Boy","Donkey Kong Game Boy",
-    "Donkey Kong Land Game Boy","Donkey Kong Land 2 Game Boy",
+    "Donkey Kong Land Game Boy","Donkey Kong Land 2 Game Boy","Donkey Kong Land III Game Boy",
     "Kirby's Dream Land Game Boy","Kirby's Dream Land 2 Game Boy","Kirby's Pinball Land Game Boy",
-    "Metroid II Return of Samus Game Boy","Castlevania The Adventure Game Boy",
-    "Castlevania Belmont's Revenge Game Boy",
+    "Kirby's Star Stacker Game Boy","Metroid II Return of Samus Game Boy",
+    "Castlevania The Adventure Game Boy","Castlevania II Belmont's Revenge Game Boy",
     "Mega Man Dr Wily's Revenge Game Boy","Mega Man II Game Boy","Mega Man III Game Boy",
     "Mega Man IV Game Boy","Mega Man V Game Boy",
-    "Dr Mario Game Boy","Yoshi Game Boy","DuckTales Game Boy","DuckTales 2 Game Boy",
-    "Contra The Alien Wars Game Boy","Operation C Game Boy",
-    "Batman Game Boy","Bubble Bobble Game Boy","Gargoyle's Quest Game Boy","Mole Mania Game Boy"
+    "Dr Mario Game Boy","Yoshi Game Boy","Yoshi's Cookie Game Boy","Balloon Kid Game Boy",
+    "DuckTales Game Boy","DuckTales 2 Game Boy","Chip n Dale Rescue Rangers Game Boy",
+    "TaleSpin Game Boy","Darkwing Duck Game Boy",
+    "Contra The Alien Wars Game Boy","Operation C Game Boy","Bionic Commando Game Boy",
+    "Batman Game Boy","Batman Return of the Joker Game Boy","Spider-Man Game Boy",
+    "Teenage Mutant Ninja Turtles Game Boy","TMNT II Game Boy","TMNT III Game Boy",
+    "Aladdin Game Boy","The Lion King Game Boy","Toy Story Game Boy",
+    "Bugs Bunny Crazy Castle Game Boy","Bugs Bunny Crazy Castle 2 Game Boy",
+    "Pac-Man Game Boy","Ms Pac-Man Game Boy","Space Invaders Game Boy",
+    "Centipede Game Boy","Frogger Game Boy","Q*bert Game Boy",
+    "R-Type Game Boy","R-Type II Game Boy","Gradius Interstellar Assault Game Boy",
+    "Gargoyle's Quest Game Boy","Bubble Bobble Game Boy","Bubble Bobble Part 2 Game Boy",
+    "Rainbow Islands Game Boy","Columns Game Boy","Mole Mania Game Boy",
+    "Solar Striker Game Boy","Alleyway Game Boy","Baseball Game Boy",
+    "Tennis Game Boy","Golf Game Boy","Soccer Game Boy","Boxing Game Boy",
+    "F-1 Race Game Boy","Motocross Maniacs Game Boy","Radar Mission Game Boy",
+    "Bomberman GB Game Boy","Bomberman GB 2 Game Boy","Battletoads Game Boy",
+    "Double Dragon Game Boy","Final Fight Game Boy","Street Fighter II Game Boy",
+    "Mortal Kombat Game Boy","Mortal Kombat II Game Boy","Killer Instinct Game Boy",
+    "WWF Superstars Game Boy","WWF King of the Ring Game Boy","WWF Raw Game Boy",
+    "Home Alone Game Boy","Simpsons Bart Juggernauts Game Boy",
+    "Tiny Toon Adventures Game Boy","Animaniacs Game Boy"
   ],
   snes: [
     "Super Mario World SNES","Super Mario World 2 Yoshi's Island SNES","Super Mario Kart SNES",
     "Super Mario RPG SNES","Super Mario All-Stars SNES",
     "Zelda A Link to the Past SNES","Super Metroid SNES","Kirby Super Star SNES",
-    "Kirby's Dream Land 3 SNES","Kirby's Dream Course SNES",
+    "Kirby's Dream Land 3 SNES","Kirby's Dream Course SNES","Kirby's Avalanche SNES",
     "Donkey Kong Country SNES","Donkey Kong Country 2 SNES","Donkey Kong Country 3 SNES",
     "Star Fox SNES","Star Fox 2 SNES","F-Zero SNES","Pilotwings SNES","Earthbound SNES",
-    "Final Fantasy IV SNES","Final Fantasy V SNES","Final Fantasy VI SNES",
-    "Chrono Trigger SNES","Secret of Mana SNES","Secret of Evermore SNES",
-    "Terranigma SNES","Illusion of Gaia SNES","Soul Blazer SNES","ActRaiser SNES",
+    "Fire Emblem Genealogy Holy War SNES","Final Fantasy IV SNES","Final Fantasy V SNES",
+    "Final Fantasy VI SNES","Chrono Trigger SNES","Secret of Mana SNES","Secret of Evermore SNES",
+    "Terranigma SNES","Illusion of Gaia SNES","Soul Blazer SNES","ActRaiser SNES","ActRaiser 2 SNES",
     "Breath of Fire SNES","Breath of Fire II SNES","Tales of Phantasia SNES",
-    "Mega Man X SNES","Mega Man X2 SNES","Mega Man X3 SNES","Mega Man 7 SNES",
+    "Star Ocean SNES","Tactics Ogre SNES","Front Mission SNES","Bahamut Lagoon SNES",
+    "Live A Live SNES","Mega Man X SNES","Mega Man X2 SNES","Mega Man X3 SNES","Mega Man 7 SNES",
     "Super Castlevania IV SNES","Castlevania Dracula X SNES",
-    "Contra III Alien Wars SNES","Gradius III SNES",
+    "Contra III Alien Wars SNES","Gradius III SNES","R-Type III SNES",
     "Street Fighter II SNES","Street Fighter II Turbo SNES","Super Street Fighter II SNES",
-    "Mortal Kombat SNES","Mortal Kombat II SNES","Killer Instinct SNES","Super Punch-Out SNES",
-    "WWF Royal Rumble SNES","Teenage Mutant Ninja Turtles IV SNES",
-    "Aladdin SNES","The Lion King SNES","Earthworm Jim SNES","Earthworm Jim 2 SNES",
+    "Mortal Kombat SNES","Mortal Kombat II SNES","Mortal Kombat 3 SNES",
+    "Killer Instinct SNES","Super Punch-Out SNES",
+    "WWF Royal Rumble SNES","WWF WrestleMania SNES","WWF Raw SNES",
+    "Teenage Mutant Ninja Turtles IV SNES","TMNT Tournament Fighters SNES",
+    "Batman Returns SNES","Batman Forever SNES",
+    "Spider-Man Venom Maximum Carnage SNES","X-Men Mutant Apocalypse SNES",
+    "Aladdin SNES","The Lion King SNES","The Jungle Book SNES","Toy Story SNES",
+    "Mickey Mania SNES","Goof Troop SNES","Tiny Toon Adventures SNES","Animaniacs SNES",
+    "Simpsons Bart's Nightmare SNES","Earthworm Jim SNES","Earthworm Jim 2 SNES",
+    "Sunset Riders SNES","Final Fight SNES","Final Fight 2 SNES","Final Fight 3 SNES",
+    "Double Dragon V SNES","Battletoads Double Dragon SNES",
+    "Super Star Wars SNES","Super Empire Strikes Back SNES","Super Return of the Jedi SNES",
     "Super Bomberman SNES","Super Bomberman 2 SNES","Super Bomberman 3 SNES",
-    "Top Gear SNES","Top Gear 2 SNES","Rock N Roll Racing SNES",
-    "Lemmings SNES","The Lost Vikings SNES","Blackthorne SNES","Stunt Race FX SNES"
+    "Super Bomberman 4 SNES","Super Bomberman 5 SNES",
+    "Tetris Attack SNES","Bust-A-Move SNES","Lemmings SNES","Lemmings 2 SNES",
+    "The Lost Vikings SNES","Rock N Roll Racing SNES","Blackthorne SNES",
+    "Top Gear SNES","Top Gear 2 SNES","Top Gear 3000 SNES","Stunt Race FX SNES",
+    "Pac-Man 2 New Adventures SNES","Ms Pac-Man SNES","Jurassic Park SNES","Home Alone SNES"
   ],
   megadrive: [
     "Sonic the Hedgehog Mega Drive","Sonic the Hedgehog 2 Mega Drive","Sonic the Hedgehog 3 Mega Drive",
     "Sonic and Knuckles Mega Drive","Sonic Spinball Mega Drive","Sonic 3D Blast Mega Drive",
-    "Dr Robotnik's Mean Bean Machine Mega Drive",
+    "Dr Robotnik's Mean Bean Machine Mega Drive","Sonic CD Mega Drive",
     "Streets of Rage Mega Drive","Streets of Rage 2 Mega Drive","Streets of Rage 3 Mega Drive",
     "Golden Axe Mega Drive","Golden Axe II Mega Drive","Golden Axe III Mega Drive",
     "Altered Beast Mega Drive","Shinobi III Mega Drive","The Revenge of Shinobi Mega Drive",
-    "Vectorman Mega Drive","Comix Zone Mega Drive",
-    "Earthworm Jim Mega Drive","Earthworm Jim 2 Mega Drive",
+    "Shadow Dancer Mega Drive","Vectorman Mega Drive","Vectorman 2 Mega Drive",
+    "Comix Zone Mega Drive","Earthworm Jim Mega Drive","Earthworm Jim 2 Mega Drive",
     "Aladdin Mega Drive","The Lion King Mega Drive","The Jungle Book Mega Drive",
     "Cool Spot Mega Drive","Quackshot Mega Drive","Castle of Illusion Mega Drive",
     "World of Illusion Mega Drive","Mickey Mania Mega Drive",
-    "Mortal Kombat Mega Drive","Mortal Kombat II Mega Drive",
-    "Street Fighter II Special Champion Edition Mega Drive",
-    "Eternal Champions Mega Drive","Virtua Fighter 2 Mega Drive",
+    "Mortal Kombat Mega Drive","Mortal Kombat II Mega Drive","Mortal Kombat 3 Mega Drive",
+    "Street Fighter II Special Champion Edition Mega Drive","Super Street Fighter II Mega Drive",
+    "Eternal Champions Mega Drive","Virtua Fighter 2 Mega Drive","Virtua Racing Mega Drive",
     "NBA Jam Mega Drive","NBA Jam Tournament Edition Mega Drive",
-    "WWF Royal Rumble Mega Drive","Gunstar Heroes Mega Drive",
-    "Alien Soldier Mega Drive","Contra Hard Corps Mega Drive",
+    "WWF Royal Rumble Mega Drive","WWF WrestleMania Mega Drive","WWF Raw Mega Drive",
+    "Gunstar Heroes Mega Drive","Alien Soldier Mega Drive","Contra Hard Corps Mega Drive",
     "Castlevania Bloodlines Mega Drive","Rocket Knight Adventures Mega Drive",
-    "Ristar Mega Drive","Dynamite Headdy Mega Drive","Landstalker Mega Drive",
+    "Sparkster Mega Drive","Ristar Mega Drive","Dynamite Headdy Mega Drive",
+    "Landstalker Mega Drive","Light Crusader Mega Drive","Beyond Oasis Mega Drive",
     "Phantasy Star II Mega Drive","Phantasy Star III Mega Drive","Phantasy Star IV Mega Drive",
-    "Shining Force Mega Drive","Shining Force II Mega Drive","Beyond Oasis Mega Drive",
+    "Shining Force Mega Drive","Shining Force II Mega Drive","Shining in the Darkness Mega Drive",
     "Road Rash Mega Drive","Road Rash II Mega Drive","Road Rash III Mega Drive",
-    "OutRun Mega Drive","Super Hang-On Mega Drive","Super Monaco GP Mega Drive",
-    "Micro Machines Mega Drive","Micro Machines 2 Mega Drive",
+    "OutRun Mega Drive","OutRun 2019 Mega Drive","Super Hang-On Mega Drive",
+    "Super Monaco GP Mega Drive","Micro Machines Mega Drive","Micro Machines 2 Mega Drive",
     "Desert Strike Mega Drive","Jungle Strike Mega Drive","Urban Strike Mega Drive",
     "FIFA International Soccer Mega Drive","FIFA 96 Mega Drive","FIFA 97 Mega Drive",
-    "Samurai Shodown Mega Drive","Fatal Fury 2 Mega Drive","Fatal Fury Special Mega Drive",
+    "FIFA 98 Mega Drive","FIFA 99 Mega Drive",
+    "NBA Live Mega Drive","Madden NFL Mega Drive","NHL 94 Mega Drive","NHL 95 Mega Drive",
+    "Samurai Shodown Mega Drive","Fatal Fury Mega Drive","Fatal Fury 2 Mega Drive",
+    "Fatal Fury Special Mega Drive","Power Instinct Mega Drive",
     "TMNT Hyperstone Heist Mega Drive","Spider-Man Mega Drive","X-Men Mega Drive",
+    "X-Men 2 Clone Wars Mega Drive","Captain America Avengers Mega Drive",
     "Jurassic Park Mega Drive","Batman Mega Drive","Batman Returns Mega Drive",
-    "Zombies Ate My Neighbors Mega Drive","Doom Mega Drive"
+    "Robocop vs Terminator Mega Drive","Terminator Mega Drive",
+    "Zombies Ate My Neighbors Mega Drive","Splatterhouse 2 Mega Drive","Splatterhouse 3 Mega Drive",
+    "Doom Mega Drive","Wolfenstein 3D Mega Drive",
+    "Bubsy Mega Drive","Aero the Acro-Bat Mega Drive","Taz-Mania Mega Drive",
+    "TaleSpin Mega Drive","DuckTales Mega Drive","Darkwing Duck Mega Drive",
+    "Toy Story Mega Drive","Animaniacs Mega Drive","Tiny Toon Adventures Mega Drive"
   ],
   nes: [
     "Super Mario Bros NES","Super Mario Bros 2 NES","Super Mario Bros 3 NES",
@@ -649,29 +772,65 @@ var allGames = {
     "Castlevania NES","Castlevania II NES","Castlevania III NES",
     "Contra NES","Super C NES","DuckTales NES","DuckTales 2 NES",
     "Ninja Gaiden NES","Ninja Gaiden II NES","Ninja Gaiden III NES",
-    "Battletoads NES","Double Dragon NES","Double Dragon II NES",
+    "Battletoads NES","Double Dragon NES","Double Dragon II NES","Double Dragon III NES",
     "Tetris NES","Dr Mario NES","Punch-Out NES","Mike Tyson's Punch-Out NES",
-    "Excitebike NES","Ice Climber NES","Balloon Fight NES",
+    "Excitebike NES","Ice Climber NES","Balloon Fight NES","Donkey Kong NES",
     "Final Fantasy NES","Final Fantasy II NES","Final Fantasy III NES",
-    "Dragon Warrior NES","Dragon Warrior II NES","Dragon Warrior III NES",
+    "Dragon Warrior NES","Dragon Warrior II NES","Dragon Warrior III NES","Dragon Warrior IV NES",
     "Bionic Commando NES","Ghosts N Goblins NES","1942 NES","Lifeforce NES",
-    "Chip n Dale Rescue Rangers NES","TaleSpin NES","Darkwing Duck NES"
+    "Chip n Dale Rescue Rangers NES","Chip n Dale Rescue Rangers 2 NES",
+    "TaleSpin NES","Darkwing Duck NES","DuckTales NES",
+    "Batman NES","Batman Return of the Joker NES","Spider-Man NES",
+    "Teenage Mutant Ninja Turtles NES","TMNT II Arcade Game NES","TMNT III Manhattan Project NES",
+    "Tiny Toon Adventures NES","Animaniacs NES",
+    "Aladdin NES","The Lion King NES","The Jungle Book NES","Toy Story NES",
+    "Home Alone NES","Home Alone 2 NES",
+    "Pac-Man NES","Ms Pac-Man NES","Galaga NES","Galaxian NES",
+    "Space Invaders NES","Centipede NES","Asteroids NES","Missile Command NES",
+    "Frogger NES","Q*bert NES","Pitfall NES","River City Ransom NES",
+    "Tecmo Super Bowl NES","Baseball Stars NES","RBI Baseball NES",
+    "Rad Racer NES","RC Pro-Am NES","Paperboy NES","Pinball NES",
+    "Urban Champion NES","Clu Clu Land NES","Wrecking Crew NES",
+    "Pro Wrestling NES","Volleyball NES","Soccer NES","Tennis NES",
+    "Golf NES","Baseball NES","Track and Field NES","Track and Field II NES",
+    "Kung Fu Master NES","Kung Fu Heroes NES","Kid Niki NES","Rygar NES",
+    "Strider NES","Jackal NES","Rush N Attack NES","Ikari Warriors NES",
+    "Battletoads Double Dragon NES","Mighty Final Fight NES",
+    "Little Nemo Dream Master NES","Adventures of Lolo NES","Adventures of Lolo 2 NES",
+    "Gargoyle's Quest II NES","Gradius NES","Life Force NES","Xevious NES"
   ],
   n64: [
     "Super Mario 64 N64","Mario Kart 64 N64","Super Smash Bros N64",
     "Zelda Ocarina of Time N64","Zelda Majora's Mask N64",
     "Banjo-Kazooie N64","Banjo-Tooie N64","Donkey Kong 64 N64",
-    "Star Fox 64 N64","F-Zero X N64","Wave Race 64 N64",
+    "Star Fox 64 N64","F-Zero X N64","Wave Race 64 N64","1080 Snowboarding N64",
     "Mario Party N64","Mario Party 2 N64","Mario Party 3 N64",
     "Mario Golf N64","Mario Tennis N64","Paper Mario N64",
     "Yoshi's Story N64","Kirby 64 N64","Pokemon Snap N64",
     "Pokemon Stadium N64","Pokemon Stadium 2 N64","Pokemon Puzzle League N64",
-    "GoldenEye 007 N64","Perfect Dark N64","Turok N64","Turok 2 N64",
+    "GoldenEye 007 N64","Perfect Dark N64","Turok N64","Turok 2 N64","Turok 3 N64",
     "Conker's Bad Fur Day N64","Rayman 2 N64","Diddy Kong Racing N64",
-    "1080 Snowboarding N64","Excitebike 64 N64","Pilotwings 64 N64",
+    "Pilotwings 64 N64","Excitebike 64 N64","Cruisin USA N64","Cruisin World N64",
     "Castlevania N64","Castlevania Legacy of Darkness N64",
     "Mortal Kombat 4 N64","Killer Instinct Gold N64","WWF No Mercy N64",
-    "Star Wars Rogue Squadron N64","Doom 64 N64"
+    "WWF Wrestlemania 2000 N64","WWF War Zone N64",
+    "Star Wars Rogue Squadron N64","Star Wars Shadows of the Empire N64",
+    "Doom 64 N64","Quake N64","Quake II N64","Hexen N64",
+    "Bomberman 64 N64","Bomberman Hero N64","Bomberman 64 Second Attack N64",
+    "Jet Force Gemini N64","Blast Corps N64","Body Harvest N64",
+    "Ogre Battle 64 N64","Hybrid Heaven N64","Mega Man 64 N64",
+    "Spider-Man N64","Batman Beyond N64","Superman 64 N64",
+    "Ridge Racer 64 N64","San Francisco Rush N64","Rush 2 N64",
+    "Indiana Jones Infernal Machine N64","Mission Impossible N64",
+    "007 The World is Not Enough N64","007 Tomorrow Never Dies N64",
+    "Tony Hawk Pro Skater N64","Tony Hawk Pro Skater 2 N64","Tony Hawk Pro Skater 3 N64",
+    "NFL Blitz N64","NBA Jam N64","FIFA 64 N64","NBA Courtside N64",
+    "Harvest Moon 64 N64","Animal Forest N64",
+    "Sin and Punishment N64","Mischief Makers N64","Space Station Silicon Valley N64",
+    "Mystical Ninja Starring Goemon N64","Goemon's Great Adventure N64",
+    "Extreme G N64","Extreme G 2 N64","F1 World Grand Prix N64",
+    "Mickey's Speedway USA N64","Tarzan N64","Rugrats N64",
+    "Star Wars Episode I Racer N64","Lego Racers N64","Hydro Thunder N64"
   ],
   ds: [
     "Pokemon Diamant DS","Pokemon Perle DS","Pokemon Platine DS",
@@ -679,69 +838,153 @@ var allGames = {
     "Pokemon Noir DS","Pokemon Blanc DS","Pokemon Noir 2 DS","Pokemon Blanc 2 DS",
     "New Super Mario Bros DS","Super Mario 64 DS","Mario Kart DS",
     "Mario Party DS","Mario and Luigi Partners in Time DS","Mario and Luigi Bowser's Inside Story DS",
+    "Mario vs Donkey Kong 2 DS","Mario Hoops 3on3 DS","Mario Basketball DS",
     "Zelda Phantom Hourglass DS","Zelda Spirit Tracks DS",
     "Kirby Super Star Ultra DS","Kirby Canvas Curse DS","Kirby Mass Attack DS",
-    "Metroid Prime Hunters DS","Advance Wars Days of Ruin DS","Fire Emblem Shadow Dragon DS",
-    "Animal Crossing Wild World DS","Brain Age DS","Brain Age 2 DS","Nintendogs DS",
-    "Professor Layton Curious Village DS","Professor Layton Diabolical Box DS",
+    "Kirby Squeak Squad DS","Metroid Prime Hunters DS","Metroid Prime Pinball DS",
+    "Donkey Kong Country Returns DS","DK Jungle Climber DS",
+    "Advance Wars Days of Ruin DS","Advance Wars Dual Strike DS",
+    "Fire Emblem Shadow Dragon DS","Fire Emblem New Mystery Emblem DS",
+    "Animal Crossing Wild World DS","Nintendogs DS","Brain Age DS","Brain Age 2 DS",
+    "Big Brain Academy DS","Professor Layton Curious Village DS","Professor Layton Diabolical Box DS",
     "Professor Layton Unwound Future DS","Professor Layton Last Specter DS",
-    "Phoenix Wright Ace Attorney DS","Phoenix Wright Justice for All DS","Phoenix Wright Trials and Tribulations DS",
+    "Phoenix Wright Ace Attorney DS","Phoenix Wright Justice for All DS",
+    "Phoenix Wright Trials and Tribulations DS","Apollo Justice DS",
     "Castlevania Dawn of Sorrow DS","Castlevania Portrait of Ruin DS","Castlevania Order of Ecclesia DS",
     "Final Fantasy III DS","Final Fantasy IV DS","Final Fantasy Tactics A2 DS",
+    "Final Fantasy Crystal Chronicles DS","Final Fantasy XII Revenant Wings DS",
     "Dragon Quest IV DS","Dragon Quest V DS","Dragon Quest VI DS","Dragon Quest IX DS",
     "Chrono Trigger DS","GTA Chinatown Wars DS","Pokemon Ranger DS",
-    "Pokemon Mystery Dungeon Explorers of Time DS","Pokemon Mystery Dungeon Explorers of Darkness DS"
+    "Pokemon Mystery Dungeon Explorers of Time DS","Pokemon Mystery Dungeon Explorers of Darkness DS",
+    "Disgaea DS","Trauma Center Under the Knife DS","Trauma Center Under the Knife 2 DS",
+    "Cooking Mama DS","Cooking Mama 2 DS","Hotel Dusk Room 215 DS","Last Window DS",
+    "999 Nine Hours DS","Ghost Trick DS","Rune Factory DS","Rune Factory 2 DS",
+    "Harvest Moon Island of Happiness DS","Contact DS","Drawn to Life DS",
+    "Scribblenauts DS","Super Scribblenauts DS","Bangai-O Spirits DS",
+    "Picross DS","Picross 3D DS","Elite Beat Agents DS","Ouendan DS","Ouendan 2 DS",
+    "Tetris DS","Clubhouse Games DS","42 All-Time Classics DS",
+    "Wario Ware Touched DS","Wario Ware DIY DS",
+    "Starfox Command DS","Meteos DS","Electroplankton DS",
+    "Sonic Rush DS","Sonic Rush Adventure DS","Sonic Chronicles DS",
+    "Dragon Ball Z Supersonic Warriors 2 DS","Naruto Ninja Council 3 DS",
+    "Yu-Gi-Oh World Championship DS","Mario and Sonic Olympic Games DS",
+    "Lego Star Wars Complete Saga DS","Lego Indiana Jones DS","Lego Batman DS",
+    "Spore DS","Sim City DS","Age of Empires DS","Civilization Revolution DS"
   ],
   "3ds": [
     "Pokemon X 3DS","Pokemon Y 3DS","Pokemon Rubis Omega 3DS","Pokemon Saphir Alpha 3DS",
     "Pokemon Soleil 3DS","Pokemon Lune 3DS","Pokemon Ultra Soleil 3DS","Pokemon Ultra Lune 3DS",
     "Super Mario 3D Land 3DS","Mario Kart 7 3DS","New Super Mario Bros 2 3DS",
-    "Mario Party Island Tour 3DS","Mario Party Star Rush 3DS",
+    "Mario Party Island Tour 3DS","Mario Party Star Rush 3DS","Mario Party Top 100 3DS",
     "Mario and Luigi Dream Team 3DS","Mario and Luigi Paper Jam 3DS",
+    "Mario and Luigi Superstar Saga DX 3DS","Mario and Luigi Bowser's Inside Story DX 3DS",
+    "Super Mario Maker 3DS","Mario Golf World Tour 3DS","Mario Tennis Open 3DS",
     "Zelda Ocarina of Time 3D 3DS","Zelda Majora's Mask 3D 3DS","Zelda A Link Between Worlds 3DS",
-    "Zelda Tri Force Heroes 3DS","Kirby Triple Deluxe 3DS","Kirby Planet Robobot 3DS",
+    "Zelda Tri Force Heroes 3DS","Hyrule Warriors Legends 3DS",
+    "Kirby Triple Deluxe 3DS","Kirby Planet Robobot 3DS","Kirby Battle Royale 3DS",
     "Donkey Kong Country Returns 3D 3DS","Metroid Samus Returns 3DS",
-    "Fire Emblem Awakening 3DS","Fire Emblem Fates 3DS","Fire Emblem Echoes 3DS",
-    "Animal Crossing New Leaf 3DS","Tomodachi Life 3DS","Miitopia 3DS",
+    "Fire Emblem Awakening 3DS","Fire Emblem Fates Birthright 3DS","Fire Emblem Fates Conquest 3DS",
+    "Fire Emblem Echoes 3DS","Fire Emblem Warriors 3DS",
+    "Animal Crossing New Leaf 3DS","Animal Crossing Happy Home Designer 3DS",
+    "Tomodachi Life 3DS","Miitopia 3DS",
     "Professor Layton Miracle Mask 3DS","Professor Layton Azran Legacy 3DS",
+    "Professor Layton vs Phoenix Wright 3DS",
     "Phoenix Wright Dual Destinies 3DS","Phoenix Wright Spirit of Justice 3DS",
-    "Castlevania Mirror of Fate 3DS","Monster Hunter 4 Ultimate 3DS","Monster Hunter Generations 3DS",
-    "Dragon Quest VII 3DS","Dragon Quest VIII 3DS","Final Fantasy Explorers 3DS",
-    "Bravely Default 3DS","Bravely Second 3DS","Xenoblade Chronicles 3D 3DS",
-    "Pokemon Mystery Dungeon Gates to Infinity 3DS","Pokemon Rumble Blast 3DS",
-    "Resident Evil Revelations 3DS","Metal Gear Solid Snake Eater 3D 3DS",
-    "Street Fighter IV 3DS","Tekken 3D Prime Edition 3DS","Shovel Knight 3DS"
+    "Castlevania Mirror of Fate 3DS",
+    "Monster Hunter 3 Ultimate 3DS","Monster Hunter 4 Ultimate 3DS",
+    "Monster Hunter Generations 3DS","Monster Hunter Stories 3DS",
+    "Dragon Quest VII 3DS","Dragon Quest VIII 3DS","Dragon Quest XI 3DS",
+    "Final Fantasy Explorers 3DS","Bravely Default 3DS","Bravely Second 3DS",
+    "Xenoblade Chronicles 3D 3DS","Shin Megami Tensei IV 3DS","Shin Megami Tensei IV Apocalypse 3DS",
+    "Pokemon Mystery Dungeon Gates to Infinity 3DS","Pokemon Mystery Dungeon Super 3DS",
+    "Pokemon Rumble Blast 3DS","Pokemon Rumble World 3DS",
+    "Resident Evil Revelations 3DS","Resident Evil Mercenaries 3DS",
+    "Metal Gear Solid Snake Eater 3D 3DS","Street Fighter IV 3DS",
+    "Tekken 3D Prime Edition 3DS","Dead or Alive Dimensions 3DS",
+    "Kid Icarus Uprising 3DS","Star Fox 64 3D 3DS",
+    "Code of Princess 3DS","Rhythm Thief 3DS","Pushmo 3DS","Crashmo 3DS","Boxboy 3DS",
+    "Shovel Knight 3DS","Steamworld Dig 3DS","Cave Story 3DS",
+    "Mutant Mudds 3DS","Gunman Clive 3DS","Mighty Switch Force 3DS",
+    "Nano Assault 3DS","Pac-Man Party 3DS","Tetris Ultimate 3DS",
+    "Dragon Ball Z Extreme Butoden 3DS","Naruto Powerful Shippuden 3DS",
+    "One Piece Romance Dawn 3DS","Yo-Kai Watch 3DS","Yo-Kai Watch 2 3DS",
+    "Etrian Odyssey IV 3DS","Etrian Odyssey V 3DS","Persona Q 3DS","Persona Q2 3DS",
+    "Ace Attorney Investigations 3DS","Ghost Trick 3DS",
+    "Lego City Undercover Chase Begins 3DS","Lego Star Wars Force Awakens 3DS"
   ],
   wii: [
-    "Wii Sports Wii","Wii Sports Resort Wii","Wii Fit Wii","Wii Fit Plus Wii",
+    "Wii Sports Wii","Wii Sports Resort Wii","Wii Fit Wii","Wii Fit Plus Wii","Wii Party Wii",
     "Mario Kart Wii","New Super Mario Bros Wii","Super Mario Galaxy Wii",
     "Super Mario Galaxy 2 Wii","Super Smash Bros Brawl Wii",
     "Zelda Twilight Princess Wii","Zelda Skyward Sword Wii",
     "Donkey Kong Country Returns Wii","Kirby's Epic Yarn Wii","Kirby's Return to Dream Land Wii",
-    "Metroid Prime 3 Corruption Wii","Metroid Other M Wii",
-    "Mario Party 8 Wii","Mario Party 9 Wii","Animal Crossing City Folk Wii",
-    "Fire Emblem Radiant Dawn Wii","Xenoblade Chronicles Wii",
-    "The Last Story Wii","Pandora's Tower Wii",
-    "No More Heroes Wii","No More Heroes 2 Wii","MadWorld Wii",
-    "Sonic Colors Wii","Sonic Unleashed Wii","Rayman Origins Wii",
-    "Red Steel Wii","Red Steel 2 Wii","GoldenEye 007 Wii",
-    "Call of Duty Modern Warfare Reflex Wii","Resident Evil 4 Wii",
-    "Resident Evil Umbrella Chronicles Wii","Guitar Hero III Wii",
-    "Rock Band Wii","Just Dance Wii","Just Dance 2 Wii","Just Dance 3 Wii",
+    "Metroid Prime 3 Corruption Wii","Metroid Other M Wii","Metroid Prime Trilogy Wii",
+    "Mario Party 8 Wii","Mario Party 9 Wii",
+    "Animal Crossing City Folk Wii","Fire Emblem Radiant Dawn Wii",
+    "Xenoblade Chronicles Wii","The Last Story Wii","Pandora's Tower Wii",
+    "No More Heroes Wii","No More Heroes 2 Wii","MadWorld Wii","Muramasa The Demon Blade Wii",
+    "Sonic Colors Wii","Sonic Unleashed Wii","Sonic and the Secret Rings Wii",
+    "Sonic and the Black Knight Wii","Rayman Origins Wii","Rayman Legends Wii",
+    "Red Steel Wii","Red Steel 2 Wii","GoldenEye 007 Wii","The Conduit Wii",
+    "Call of Duty Modern Warfare Reflex Wii","Call of Duty Black Ops Wii",
+    "Resident Evil 4 Wii","Resident Evil Umbrella Chronicles Wii",
+    "Resident Evil Darkside Chronicles Wii","Dead Space Extraction Wii",
+    "House of the Dead Overkill Wii","The House of the Dead 2 3 Return Wii",
+    "Guitar Hero III Wii","Guitar Hero World Tour Wii","Rock Band Wii","Rock Band 2 Wii",
+    "Just Dance Wii","Just Dance 2 Wii","Just Dance 3 Wii","Just Dance 4 Wii",
     "Super Paper Mario Wii","Mario Strikers Charged Wii","Mario Super Sluggers Wii",
-    "Punch-Out Wii","Tatsunoko vs Capcom Wii"
+    "Punch-Out Wii","Tatsunoko vs Capcom Wii",
+    "Fragile Dreams Wii","Little King's Story Wii","Zack and Wiki Wii",
+    "de Blob Wii","de Blob 2 Wii","Boom Blox Wii","Boom Blox Bash Party Wii",
+    "Endless Ocean Wii","Endless Ocean 2 Wii",
+    "Pikmin New Play Control Wii","Pikmin 2 New Play Control Wii",
+    "Donkey Kong Barrel Blast Wii","ExciteTruck Wii","ExciteBots Wii",
+    "Harvest Moon Tree of Tranquility Wii","Rune Factory Frontier Wii",
+    "Tales of Symphonia Dawn of the New World Wii","Arc Rise Fantasia Wii",
+    "Prince of Persia Forgotten Sands Wii","Batman Brave Bold Wii",
+    "Harry Potter Half-Blood Prince Wii","Lego Star Wars Complete Saga Wii",
+    "Lego Indiana Jones Wii","Lego Batman Wii","Lego Pirates Caribbean Wii",
+    "Disney Epic Mickey Wii","Disney Epic Mickey 2 Wii",
+    "NBA 2K10 Wii","Madden NFL 10 Wii","FIFA 10 Wii",
+    "Mario and Sonic Olympic Games Wii","Mario and Sonic London 2012 Wii",
+    "Tiger Woods PGA Tour 10 Wii","Need for Speed Carbon Wii",
+    "Wario Land Shake It Wii","Kirby's Adventure Wii","Okami Wii"
   ],
   wiiu: [
     "Mario Kart 8 Wii U","Super Smash Bros Wii U","New Super Mario Bros U Wii U",
-    "New Super Luigi U Wii U","Super Mario 3D World Wii U",
+    "New Super Luigi U Wii U","Super Mario 3D World Wii U","Super Mario Maker Wii U",
     "Zelda Wind Waker HD Wii U","Zelda Twilight Princess HD Wii U","Zelda Breath of the Wild Wii U",
-    "Donkey Kong Country Tropical Freeze Wii U","Kirby and the Rainbow Curse Wii U",
-    "Yoshi's Woolly World Wii U","Captain Toad Treasure Tracker Wii U",
-    "Splatoon Wii U","Pikmin 3 Wii U","Mario Party 10 Wii U",
-    "Bayonetta 2 Wii U","Xenoblade Chronicles X Wii U",
-    "Paper Mario Color Splash Wii U","Star Fox Zero Wii U",
-    "Hyrule Warriors Wii U","Fatal Frame Maiden of Black Water Wii U",
-    "Pokken Tournament Wii U","Super Mario Maker Wii U","Nintendo Land Wii U"
+    "Hyrule Warriors Wii U","Donkey Kong Country Tropical Freeze Wii U",
+    "Kirby and the Rainbow Curse Wii U","Yoshi's Woolly World Wii U",
+    "Captain Toad Treasure Tracker Wii U","Splatoon Wii U","Pikmin 3 Wii U",
+    "Mario Party 10 Wii U","Bayonetta 2 Wii U","Bayonetta Wii U",
+    "Xenoblade Chronicles X Wii U","Paper Mario Color Splash Wii U",
+    "Star Fox Zero Wii U","Star Fox Guard Wii U",
+    "Fatal Frame Maiden of Black Water Wii U","Tokyo Mirage Sessions FE Wii U",
+    "Pokken Tournament Wii U","Nintendo Land Wii U","Game and Wario Wii U",
+    "Wii Party U Wii U","Wii Sports Club Wii U","Wii Fit U Wii U",
+    "Rayman Legends Wii U","Rabbids Land Wii U",
+    "Scribblenauts Unlimited Wii U","Scribblenauts Unmasked Wii U",
+    "Batman Arkham City Armored Edition Wii U","Batman Arkham Origins Wii U",
+    "Mass Effect 3 Special Edition Wii U","Deus Ex Human Revolution Wii U",
+    "Call of Duty Black Ops II Wii U","Call of Duty Ghosts Wii U",
+    "Assassin's Creed III Wii U","Assassin's Creed IV Black Flag Wii U",
+    "Watch Dogs Wii U","Splinter Cell Blacklist Wii U",
+    "Need for Speed Most Wanted U Wii U","Sonic Lost World Wii U",
+    "Sonic Boom Rise of Lyric Wii U","Monster Hunter 3 Ultimate Wii U",
+    "Tekken Tag Tournament 2 Wii U","FIFA 13 Wii U","FIFA 14 Wii U",
+    "NBA 2K13 Wii U","Madden NFL 13 Wii U",
+    "Lego City Undercover Wii U","Lego Batman 2 Wii U","Lego Marvel Super Heroes Wii U",
+    "Lego Jurassic World Wii U","Lego Star Wars Force Awakens Wii U",
+    "Disney Infinity Wii U","Skylanders Giants Wii U","Skylanders Swap Force Wii U",
+    "ZombiU Wii U","The Wonderful 101 Wii U","Nano Assault Neo Wii U",
+    "Trine 2 Directors Cut Wii U","Shovel Knight Wii U",
+    "Child of Light Wii U","Valiant Hearts Great War Wii U",
+    "Affordable Space Adventures Wii U","Kirby's Dream Collection Wii U",
+    "Guacamelee Super Turbo Championship Edition Wii U",
+    "Mighty Switch Force Hyper Drive Edition Wii U",
+    "Earthbound Wii U","Super Mario Bros Wii U","Donkey Kong Wii U",
+    "Mario Bros Classic Wii U","Punch-Out Wii U","Kirby's Adventure Wii U"
   ]
 };
 
@@ -870,6 +1113,33 @@ function savePrice() {
     status.textContent = '❌ Erreur de connexion';
   });
 }
+function deletePrice(key) {
+  if (!confirm('Supprimer ce prix ?')) return;
+  fetch(DB_URL + '/prices/' + key + '.json', { method: 'DELETE' })
+    .then(function() { loadPrices(); })
+    .catch(function() { alert('Erreur de suppression'); });
+}
+function openEdit(key, name, price) {
+  editKey = key;
+  document.getElementById('editName').textContent = name;
+  document.getElementById('editPrice').value = price;
+  document.getElementById('editModal').classList.add('show');
+}
+function closeEdit() {
+  editKey = null;
+  document.getElementById('editModal').classList.remove('show');
+}
+function saveEdit() {
+  var newPrice = parseFloat(document.getElementById('editPrice').value);
+  if (!newPrice) { alert('Entre un prix valide !'); return; }
+  fetch(DB_URL + '/prices/' + editKey + '/price.json', {
+    method: 'PUT',
+    body: JSON.stringify(newPrice)
+  }).then(function() {
+    closeEdit();
+    loadPrices();
+  }).catch(function() { alert('Erreur de modification'); });
+}
 function loadPrices() {
   fetch(DB_URL + '/prices.json')
     .then(function(r){ return r.json(); })
@@ -877,12 +1147,22 @@ function loadPrices() {
       var box = document.getElementById('online-prices');
       if (!data) { box.innerHTML = '<div class="empty-msg">Aucun prix partagé</div>'; return; }
       onlinePrices = [];
-      Object.values(data).forEach(function(p) { onlinePrices.push(p); });
-      box.innerHTML = onlinePrices.slice(0, 20).map(function(p) {
+      onlineKeys = [];
+      Object.entries(data).forEach(function(entry) {
+        onlineKeys.push(entry[0]);
+        onlinePrices.push(entry[1]);
+      });
+      box.innerHTML = onlinePrices.map(function(p, i) {
+        var key = onlineKeys[i];
+        var safeName = p.name.replace(/'/g, "\\'");
         return '<div class="price-entry">' +
           getIcon(p.name) +
-          '<div><div class="price-entry-name">' + p.name + '</div><div class="price-entry-meta">' + p.date + '</div></div>' +
+          '<div class="price-entry-info"><div class="price-entry-name">' + p.name + '</div><div class="price-entry-meta">' + p.date + '</div></div>' +
           '<span class="price-entry-price">' + p.price + '€</span>' +
+          '<div class="price-actions">' +
+          '<button class="action-btn" onclick="openEdit(\'' + key + '\',\'' + safeName + '\',' + p.price + ')" title="Modifier">✏️</button>' +
+          '<button class="action-btn" onclick="deletePrice(\'' + key + '\')" title="Supprimer">🗑️</button>' +
+          '</div>' +
         '</div>';
       }).join('');
     }).catch(function() {
